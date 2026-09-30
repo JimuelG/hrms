@@ -1,0 +1,61 @@
+using Core.Interfaces;
+using Infrastructure.Authorization;
+using Infrastructure.Identity;
+using Infrastructure.Persistence;
+using Infrastructure.Tenancy;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace Infrastructure;
+public static class DependencyInjecttion
+{
+    public static IServiceCollection AddInfrastructure(
+        this IServiceCollection services, IConfiguration config)
+    {
+        services.AddScoped<TenantContext>();
+        services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<TenantContext>());
+        services.AddScoped<ITenantContextInitializer>(sp => sp.GetRequiredService<TenantContext>());
+
+        services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
+        services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+        services.AddOptions<JwtOptions>()
+            .Bind(config.GetSection(JwtOptions.Section))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        services.AddDataProtection();
+        
+        services.AddIdentityCore<ApplicationUser>(o =>
+        {
+            o.Password.RequiredLength = 10;
+            o.Password.RequireDigit = true;
+            o.Password.RequireLowercase = true;
+            o.Password.RequireUppercase = true;
+            o.Password.RequireNonAlphanumeric = false;
+            o.User.RequireUniqueEmail = true;
+            o.Lockout.AllowedForNewUsers = true;
+            o.Lockout.MaxFailedAccessAttempts = 5;
+            o.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
+        })
+        .AddEntityFrameworkStores<AppDbContext>()
+        .AddSignInManager()
+        .AddDefaultTokenProviders();
+
+        services.AddSingleton<JwtTokenService>();
+        services.AddScoped<IAuthService, AuthService>();
+        
+        services.AddScoped<TenantSaveChangesInterceptor>();
+        services.AddDbContext<AppDbContext>((sp, options) =>
+        {
+            options.UseSqlServer(config.GetConnectionString("Default")); 
+            options.AddInterceptors(sp.GetRequiredService<TenantSaveChangesInterceptor>());
+        });
+
+        services.AddMemoryCache();
+        services.AddScoped<IPermissionService, PermissionService>();
+
+        return services;
+    }
+}
