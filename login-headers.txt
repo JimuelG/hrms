@@ -1,7 +1,7 @@
 HTTP/1.1 200 OK
 Content-Type: application/json; charset=utf-8
-Date: Wed, 30 Sep 2026 12:59:18 GMT
+Date: Thu, 01 Oct 2026 04:57:47 GMT
 Server: Kestrel
-Set-Cookie: hrms_refresh=NoAqbkGV08ve6xvR21iAkWbYr2Ik_fZOYiH2nRU61hjK9mp_hwwVLJLvCb9KjE6IuNznP2FSB4fdfjzVyBCLKQ; expires=Wed, 07 Oct 2026 12:59:18 GMT; path=/api/v1/auth; secure; samesite=strict; httponly
+Set-Cookie: hrms_refresh=KbuLW33IUU8i3Pk1sl0wWyptsdxg0sC3Lw77iVIXq8aWkbXXoJ6XKTxowP24IF527qh3DLUihyGY-D_lMyGutA; expires=Thu, 08 Oct 2026 04:57:47 GMT; path=/api/v1/auth; secure; samesite=strict; httponly
 Transfer-Encoding: chunked
 

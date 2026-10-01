@@ -9,6 +9,6 @@ public class UserTenantRoleConfiguration : IEntityTypeConfiguration<UserTenantRo
     public void Configure(EntityTypeBuilder<UserTenantRole> builder)
     {
         builder.HasKey(utr => new { utr.UserId, utr.TenantId, utr.RoleId });
-        builder.HasOne(utr => utr.Role).WithMany().HasForeignKey(utr => utr.RoleId);
+        builder.HasOne(utr => utr.Role).WithMany().HasForeignKey(utr => utr.RoleId).IsRequired(false);
     }
 }

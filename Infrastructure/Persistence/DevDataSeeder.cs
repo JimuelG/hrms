@@ -1,6 +1,7 @@
 using Core.Constant;
 using Core.Entities;
 using Infrastructure.Identity;
+using Infrastructure.Tenancy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -14,6 +15,9 @@ public static class DevDataSeeder
         using var scope = services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
         var users = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var tenantInit = scope.ServiceProvider.GetRequiredService<ITenantContextInitializer>();
+
         var password = config["Seed:Password"]
             ?? throw new InvalidOperationException("Set Seed:Password in user-secrets.");
         
@@ -67,13 +71,20 @@ public static class DevDataSeeder
             await db.SaveChangesAsync();
         }
 
+        tenantInit.SetTenant(acme.Id);
         await EnsureTenantRole(db, acme, "HR Admin", isSystemRole: true,
         [
            Permissions.Employees.Read,
            Permissions.Employees.Write,
            Permissions.Employees.Delete,
            Permissions.Tenant.ManageRoles,
-           Permissions.Tenant.ManageSettings 
+           Permissions.Tenant.ManageSettings,
+           Permissions.Branches.Read,
+           Permissions.Branches.Write,
+           Permissions.Branches.Delete,
+           Permissions.Departments.Read,
+           Permissions.Departments.Write,
+           Permissions.Departments.Delete
         ], assignTo:acmeAdmin);
     }
 
@@ -81,9 +92,7 @@ public static class DevDataSeeder
         AppDbContext db, Tenant tenant, string roleName, bool isSystemRole,
         string[] permissionCodes, ApplicationUser assignTo)
     {
-        var role = await db.Roles
-            .IgnoreQueryFilters()
-            .FirstOrDefaultAsync(r => r.TenantId == tenant.Id && r.Name == roleName);
+        var role = await db.Roles.FirstOrDefaultAsync(r => r.TenantId == tenant.Id && r.Name == roleName);
         // var role = await db.Roles.FirstOrDefaultAsync(r => r.TenantId == tenant.Id && r.Name == roleName);
         if (role is null)
         {

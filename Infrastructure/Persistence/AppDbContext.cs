@@ -26,31 +26,47 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<UserTenantRole> UserTenantRoles => Set<UserTenantRole>();
+    public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
+    public DbSet<Branch> Branches => Set<Branch>();
+    public DbSet<Department> Departments => Set<Department>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TenantConfiguration).Assembly);
 
-        ApplyTenantFilters(modelBuilder);
+        ApplyGlobalFilters(modelBuilder);
     }
 
-    private static readonly MethodInfo SetFilterMethod =
-        typeof(AppDbContext).GetMethod(nameof(SetTenantFilter),
-            BindingFlags.NonPublic | BindingFlags.Instance)!;
-        
-    private void ApplyTenantFilters(ModelBuilder builder)
+    private static readonly MethodInfo SetTenantFilterMethod =
+        typeof(AppDbContext).GetMethod(nameof(SetTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
+    private static readonly MethodInfo SetTenantAndSoftDeleteFilterMethod =
+        typeof(AppDbContext).GetMethod(nameof(SetTenantAndSoftDeleteFilterMethod), BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+    private void ApplyGlobalFilters(ModelBuilder builder)
     {
-        foreach (var entityType in builder.Model.GetEntityTypes()
-            .Where(t => typeof(ITenantEntity).IsAssignableFrom(t.ClrType)))
+        foreach (var entityType in builder.Model.GetEntityTypes())
         {
-            SetFilterMethod.MakeGenericMethod(entityType.ClrType).Invoke(this, new object[] { builder });
+            var clrType = entityType.ClrType;
+            var isTenant = typeof(ITenantEntity).IsAssignableFrom(clrType);
+            var isSoftDelete = typeof(ISoftDelete).IsAssignableFrom(clrType);
+
+            if (isTenant && isSoftDelete)
+                SetTenantAndSoftDeleteFilterMethod.MakeGenericMethod(clrType).Invoke(this, new object[] { builder });
+            else if (isTenant)
+                SetTenantFilterMethod.MakeGenericMethod(clrType).Invoke(this, new object[] { builder });
         }
     }
 
     private void SetTenantFilter<T>(ModelBuilder builder) where T : class, ITenantEntity
     {
         builder.Entity<T>().HasQueryFilter(e => e.TenantId == CurrentTenantId);
+        builder.Entity<T>().HasIndex(e => e.TenantId);
+    }
+
+    private void SetTenantAndSoftDeleteFilter<T>(ModelBuilder builder) where T : class, ITenantEntity, ISoftDelete
+    {
+        builder.Entity<T>().HasQueryFilter(e => e.TenantId == CurrentTenantId && !e.IsDeleted);
         builder.Entity<T>().HasIndex(e => e.TenantId);
     }
 }

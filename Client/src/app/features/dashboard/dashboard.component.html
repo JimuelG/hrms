@@ -1,0 +1,7 @@
+<div class="p-8">
+    <h1 class="text-xl font-semibold">Dashboard</h1>
+    @if (me(); as m) {
+    <p class="mt-2 text-sm text-gray-600">User: {{ m.userId }}</p>
+    <p class="text-sm text-gray-600">Tenant: {{ m.tenantId }}</p>
+    }
+</div>

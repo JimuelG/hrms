@@ -1,0 +1,32 @@
+<div class="min-h-screen flex items-center justify-center bg-gray-50">
+  <div class="w-full max-w-sm bg-white p-8 rounded-lg shadow">
+    <h1 class="text-xl font-semibold mb-6">HRMS Login</h1>
+
+    @if (errorMessage()) {
+      <p class="text-red-600 text-sm mb-4">{{ errorMessage() }}</p>
+    }
+
+    @if (tenantChoices(); as choices) {
+      <p class="text-sm text-gray-600 mb-3">Select a company:</p>
+      <div class="space-y-2">
+        @for (t of choices; track t.slug) {
+          <button
+            (click)="selectTenant(t.slug)"
+            class="w-full text-left px-4 py-2 border rounded hover:bg-gray-50">
+            {{ t.name }}
+          </button>
+        }
+      </div>
+    } @else {
+      <form (ngSubmit)="submit()" class="space-y-4">
+        <input [(ngModel)]="email" name="email" type="email" placeholder="Email"
+               class="w-full border rounded px-3 py-2" required />
+        <input [(ngModel)]="password" name="password" type="password" placeholder="Password"
+               class="w-full border rounded px-3 py-2" required />
+        <button type="submit" class="w-full bg-blue-600 text-white rounded py-2 hover:bg-blue-700">
+          Sign in
+        </button>
+      </form>
+    }
+  </div>
+</div>

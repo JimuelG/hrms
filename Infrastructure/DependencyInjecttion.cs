@@ -1,5 +1,6 @@
 using Core.Interfaces;
 using Infrastructure.Authorization;
+using Infrastructure.Common;
 using Infrastructure.Identity;
 using Infrastructure.Persistence;
 using Infrastructure.Tenancy;
@@ -21,11 +22,20 @@ public static class DependencyInjecttion
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped<IUnitOfWork, UnitOfWork>();
 
+        services.AddHttpContextAccessor();
+        services.AddScoped<SoftDeleteSaveChangesInterceptor>();
+
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<AuditSaveChangesInterceptor>();
+
         services.AddOptions<JwtOptions>()
             .Bind(config.GetSection(JwtOptions.Section))
             .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddDataProtection();
+
+
+        
         
         services.AddIdentityCore<ApplicationUser>(o =>
         {
@@ -50,7 +60,10 @@ public static class DependencyInjecttion
         services.AddDbContext<AppDbContext>((sp, options) =>
         {
             options.UseSqlServer(config.GetConnectionString("Default")); 
-            options.AddInterceptors(sp.GetRequiredService<TenantSaveChangesInterceptor>());
+            options.AddInterceptors(
+                sp.GetRequiredService<TenantSaveChangesInterceptor>(),
+                sp.GetRequiredService<SoftDeleteSaveChangesInterceptor>(),
+                sp.GetRequiredService<AuditSaveChangesInterceptor>());
         });
 
         services.AddMemoryCache();

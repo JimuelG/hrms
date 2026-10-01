@@ -7,6 +7,8 @@ public static class AuthorizationExtensions
     public static IServiceCollection AddPermissionAuthorization(this IServiceCollection services)
     {
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+        services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+        services.AddAuthorization();
 
         services.AddAuthorizationBuilder()
             .AddPolicy("Permission:employees.read", p => p.Requirements.Add(new PermissionRequirement("employees.read")))

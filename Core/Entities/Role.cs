@@ -1,7 +1,7 @@
 using Core.Interfaces;
 
 namespace Core.Entities;
-public class Role : BaseEntity, ITenantEntity
+public class Role : BaseEntity, ITenantEntity, IAuditable
 {
     public Guid TenantId { get; set; }
     public string Name { get; set; } = default!;
@@ -10,7 +10,7 @@ public class Role : BaseEntity, ITenantEntity
     public ICollection<RolePermission> RolePermissions { get; set; } = [];
 }
 
-public class RolePermission : ITenantEntity
+public class RolePermission : ITenantEntity, IAuditable
 {
     public Guid TenantId { get; set; }
     public Guid RoleId { get; set; }
