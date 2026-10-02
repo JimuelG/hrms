@@ -41,7 +41,7 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     private static readonly MethodInfo SetTenantFilterMethod =
         typeof(AppDbContext).GetMethod(nameof(SetTenantFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
     private static readonly MethodInfo SetTenantAndSoftDeleteFilterMethod =
-        typeof(AppDbContext).GetMethod(nameof(SetTenantAndSoftDeleteFilterMethod), BindingFlags.NonPublic | BindingFlags.Instance)!;
+        typeof(AppDbContext).GetMethod(nameof(SetTenantAndSoftDeleteFilter), BindingFlags.NonPublic | BindingFlags.Instance)!;
 
     private void ApplyGlobalFilters(ModelBuilder builder)
     {

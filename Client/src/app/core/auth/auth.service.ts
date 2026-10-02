@@ -22,7 +22,7 @@ export class AuthService {
   }
 
   login(request: LoginRequest): Observable<LoginResponse> {
-    return this.http.post<LoginResponse>(`${this.baseUrl}/v1/auth/login`, request, { withCredentials: true })
+    return this.http.post<LoginResponse>(`${this.baseUrl}/auth/login`, request, { withCredentials: true })
       .pipe(
         tap((res) => {
           if (res.accessToken) {
@@ -33,7 +33,7 @@ export class AuthService {
   }
 
   refresh(): Observable<LoginResponse | null> {
-    return this.http.post<LoginResponse>(`${this.baseUrl}/v1/auth/refresh`, {}, { withCredentials: true})
+    return this.http.post<LoginResponse>(`${this.baseUrl}/auth/refresh`, {}, { withCredentials: true})
       .pipe(
         tap((res) => {
           if (res.accessToken) this.setSession(res.accessToken, res.accessTokenExpiresAtUtc);
@@ -46,7 +46,7 @@ export class AuthService {
   }
 
   logout(): Observable<void> {
-    return this.http.post<void>(`${this.baseUrl}/v1/auth/logout`, {}, { withCredentials: true})
+    return this.http.post<void>(`${this.baseUrl}/auth/logout`, {}, { withCredentials: true})
       .pipe(
         tap(() => this.clearSession()),
         catchError(() => {
@@ -57,7 +57,7 @@ export class AuthService {
   }
 
   me(): Observable<MeResponse> {
-    return this.http.get<MeResponse>(`${this.baseUrl}/v1/auth/me`);
+    return this.http.get<MeResponse>(`${this.baseUrl}/auth/me`);
   }
 
   trySilentRefresh(): Observable<boolean> {

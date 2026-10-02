@@ -1,7 +1,17 @@
-<div class="p-8">
-    <h1 class="text-xl font-semibold">Dashboard</h1>
-    @if (me(); as m) {
-    <p class="mt-2 text-sm text-gray-600">User: {{ m.userId }}</p>
-    <p class="text-sm text-gray-600">Tenant: {{ m.tenantId }}</p>
-    }
+<div class="max-w-5xl">
+      <h1 class="text-xl font-semibold tracking-tight">Dashboard</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5 mb-6">Overview of your workspace.</p>
+
+      @if (me(); as m) {
+        <div class="grid sm:grid-cols-2 gap-4">
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5">
+            <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Signed in as</div>
+            <div class="text-sm font-medium break-all">{{ m.userId }}</div>
+          </div>
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5">
+            <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Tenant</div>
+            <div class="text-sm font-mono break-all">{{ m.tenantId }}</div>
+          </div>
+        </div>
+      }
 </div>

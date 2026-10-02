@@ -55,7 +55,7 @@ public static class DevDataSeeder
         var globex = await EnsureTenant("globex", "Globex Inc");
 
         var acmeAdmin = await EnsureUser("admin@acme.test", false, acme);
-        await EnsureUser("multi@hrms.test", false, globex);
+        await EnsureUser("multi@hrms.test", false, acme, globex);
         await EnsureUser("platform@hrms.test", true);
 
         var existingCodes = await db.Permissions.Select(p => p.Code).ToListAsync();
@@ -86,6 +86,25 @@ public static class DevDataSeeder
            Permissions.Departments.Write,
            Permissions.Departments.Delete
         ], assignTo:acmeAdmin);
+
+        var multiUser = await users.FindByEmailAsync("multi@hrms.test")
+            ?? throw new InvalidOperationException("multi@hrms.test must be seeded before assigning its Globex role.");
+
+        tenantInit.SetTenant(globex.Id);
+        await EnsureTenantRole(db, globex, "HR Admin", isSystemRole: true,
+        [
+            Permissions.Employees.Read,
+           Permissions.Employees.Write,
+           Permissions.Employees.Delete,
+           Permissions.Tenant.ManageRoles,
+           Permissions.Tenant.ManageSettings,
+           Permissions.Branches.Read,
+           Permissions.Branches.Write,
+           Permissions.Branches.Delete,
+           Permissions.Departments.Read,
+           Permissions.Departments.Write,
+           Permissions.Departments.Delete
+        ], assignTo: multiUser);
     }
 
     private static async Task EnsureTenantRole(
@@ -93,7 +112,7 @@ public static class DevDataSeeder
         string[] permissionCodes, ApplicationUser assignTo)
     {
         var role = await db.Roles.FirstOrDefaultAsync(r => r.TenantId == tenant.Id && r.Name == roleName);
-        // var role = await db.Roles.FirstOrDefaultAsync(r => r.TenantId == tenant.Id && r.Name == roleName);
+        
         if (role is null)
         {
             role = new Role { TenantId = tenant.Id, Name = roleName, IsSystemRole = isSystemRole };

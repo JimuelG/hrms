@@ -7,12 +7,10 @@ using Microsoft.Extensions.Options;
 
 namespace API.Controllers;
 
-[ApiController]
-[Route("api/v1/auth")]
 public class AuthController(
     IAuthService auth,
     ITenantContext tenant,
-    IOptions<JwtOptions> jwt) : ControllerBase
+    IOptions<JwtOptions> jwt) : BaseApiController
 {
     private const string RefreshCookie = "hrms_refresh";
     private string? Ip => HttpContext.Connection.RemoteIpAddress?.ToString();
