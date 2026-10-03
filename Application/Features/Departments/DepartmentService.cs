@@ -7,11 +7,17 @@ using Core.Specifications;
 
 namespace Application.Features.Departments;
 
-public sealed class DepartmentService(IUnitOfWork unit, IGenericRepository<Department> repo)
+public sealed class DepartmentService(
+    IUnitOfWork unit, 
+    IGenericRepository<Department> repo,
+    IFeatureGate featureGate)
     : IDepartmentService
 {
     public async Task<ServiceResult<DepartmentDto>> CreateAsync(CreateDepartmentDto dto, CancellationToken ct = default)
     {
+        var currentCount = await repo.CountAsync(new DepartmentSearchSpecification(dto.Code), ct);
+        await featureGate.EnsureWithinLimitAsync(UsageType.Departments, currentCount, ct);
+
         var duplicate = await repo.CountAsync(new DepartmentSearchSpecification(dto.Code), ct);
         if (duplicate > 0)
             return ServiceResult<DepartmentDto>.Fail($"A branch with code '{dto.Code}' already exists." , ServiceErrorType.Conflict);

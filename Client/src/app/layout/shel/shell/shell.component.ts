@@ -22,8 +22,11 @@ export class ShellComponent {
 
   navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: 'fa-gauge' },
+    { label: 'Employees', path: '/employees', icon: 'fa-users'},
     { label: 'Branches', path: '/organization/branches', icon: 'fa-building' },
-    { label: 'Departments', path: '/organization/departments', icon: 'fa-sitemap'}
+    { label: 'Departments', path: '/organization/departments', icon: 'fa-sitemap'},
+    { label: 'Positions', path: '/organization/positions', icon: 'fa-id-badge'},
+    { label: 'Settings', path: '/settings', icon: 'fa-gear'},
   ];
 
   logout(): void {

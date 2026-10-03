@@ -5,6 +5,13 @@ import { DashboardComponent } from './features/dashboard/dashboard.component';
 import { ShellComponent } from './layout/shel/shell/shell.component';
 import { BranchesComponent } from './features/organization/branches/branches/branches.component';
 import { DepartmentsComponent } from './features/organization/deparments/departments/departments.component';
+import { SettingsComponent } from './features/settings/settings/settings.component';
+import { platformAdminGuard } from './core/guards/platform-admin-guard';
+import { PlatformShellComponent } from './layout/platform-shell/platform-shell/platform-shell.component';
+import { TenantsComponent } from './features/platform/tenants/tenants/tenants.component';
+import { PositionsComponent } from './features/organization/positions/positions/positions.component';
+import { EmployeeListComponent } from './features/employees/employee-list/employee-list/employee-list.component';
+import { EmployeeDetailComponent } from './features/employees/employee-detail/employee-detail/employee-detail.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent},
@@ -15,7 +22,20 @@ export const routes: Routes = [
         children: [
             { path: 'dashboard', component: DashboardComponent },
             { path: 'organization/branches', component: BranchesComponent},
-            { path: 'organization/departments', component: DepartmentsComponent}
+            { path: 'organization/departments', component: DepartmentsComponent},
+            { path: 'settings', component: SettingsComponent},
+            { path: 'organization/positions', component: PositionsComponent},
+            { path: 'employees', component: EmployeeListComponent},
+            { path: 'employees/:id', component: EmployeeDetailComponent},
+        ]
+    },
+    {
+        path: 'platform',
+        canActivate: [platformAdminGuard],
+        component: PlatformShellComponent,
+        children: [
+            { path: 'tenants', component: TenantsComponent },
+            { path: '', redirectTo: 'tenants', pathMatch: 'full'},
         ]
     },
     { path: '', redirectTo: 'login', pathMatch: 'full'}

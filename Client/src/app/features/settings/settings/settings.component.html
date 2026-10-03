@@ -1,0 +1,140 @@
+<div class="max-w-3xl">
+  <h1 class="text-xl font-semibold tracking-tight">Company settings</h1>
+  <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5 mb-6">Branding, locale and working schedule for your organization.</p>
+
+  @if (loading()) {
+    <p class="text-sm text-slate-400">Loading settings…</p>
+  } @else {
+    <form (ngSubmit)="save()" class="space-y-6">
+
+      @if (error()) {
+        <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5">
+          <i class="fa-solid fa-circle-exclamation text-xs"></i>{{ error() }}
+        </div>
+      }
+      @if (saved()) {
+        <div class="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 text-sm font-medium rounded-md px-3 py-2.5">
+          <i class="fa-solid fa-circle-check text-xs"></i>Settings saved.
+        </div>
+      }
+
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-4">
+        <h2 class="text-sm font-semibold">Branding</h2>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <label class="block">
+            <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Legal company name</span>
+            <input [ngModel]="form().companyLegalName" (ngModelChange)="updateField('companyLegalName', $event)"
+              name="companyLegalName" maxlength="200"
+              class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+          </label>
+          <label class="block">
+            <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Logo URL</span>
+            <input [ngModel]="form().logoUrl" (ngModelChange)="updateField('logoUrl', $event)"
+              name="logoUrl" maxlength="500"
+              class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+          </label>
+        </div>
+        <label class="block max-w-[180px]">
+          <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Primary color</span>
+          <div class="flex items-center gap-2">
+            <input type="color" [ngModel]="form().primaryColor" (ngModelChange)="updateField('primaryColor', $event)"
+              name="primaryColor"
+              class="h-9 w-9 rounded border border-slate-200 dark:border-slate-700 bg-transparent cursor-pointer" />
+            <input [ngModel]="form().primaryColor" (ngModelChange)="updateField('primaryColor', $event)"
+              name="primaryColorHex" maxlength="7"
+              class="flex-1 font-mono border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+          </div>
+        </label>
+      </section>
+
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-4">
+        <h2 class="text-sm font-semibold">Contact & address</h2>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <label class="block">
+            <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Contact email</span>
+            <input [ngModel]="form().contactEmail" (ngModelChange)="updateField('contactEmail', $event)"
+              name="contactEmail" type="email" maxlength="256"
+              class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+          </label>
+          <label class="block">
+            <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Contact phone</span>
+            <input [ngModel]="form().contactPhone" (ngModelChange)="updateField('contactPhone', $event)"
+              name="contactPhone" maxlength="30"
+              class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+          </label>
+        </div>
+        <label class="block">
+          <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Address</span>
+          <input [ngModel]="form().addressLine" (ngModelChange)="updateField('addressLine', $event)"
+            name="addressLine" maxlength="300"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+        </label>
+        <div class="grid sm:grid-cols-2 gap-4">
+          <label class="block">
+            <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">City</span>
+            <input [ngModel]="form().city" (ngModelChange)="updateField('city', $event)"
+              name="city" maxlength="100"
+              class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+          </label>
+          <label class="block">
+            <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Country</span>
+            <input [ngModel]="form().country" (ngModelChange)="updateField('country', $event)"
+              name="country" maxlength="100"
+              class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+          </label>
+        </div>
+      </section>
+
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-4">
+        <h2 class="text-sm font-semibold">Locale & schedule</h2>
+        <div class="grid sm:grid-cols-3 gap-4">
+          <label class="block">
+            <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Time zone</span>
+            <input [ngModel]="form().timeZoneId" (ngModelChange)="updateField('timeZoneId', $event)"
+              name="timeZoneId" required maxlength="100" placeholder="e.g. Asia/Manila"
+              class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+          </label>
+          <label class="block">
+            <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Currency</span>
+            <input [ngModel]="form().currency" (ngModelChange)="updateField('currency', $event)"
+              name="currency" required maxlength="3" placeholder="USD"
+              class="w-full uppercase border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+          </label>
+          <label class="block">
+            <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Date format</span>
+            <input [ngModel]="form().dateFormat" (ngModelChange)="updateField('dateFormat', $event)"
+              name="dateFormat" required maxlength="20"
+              class="w-full font-mono border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+          </label>
+        </div>
+
+        <div>
+          <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Working days</span>
+          <div class="flex gap-1.5">
+            @for (day of dayOptions; track day.value) {
+              <button type="button" (click)="toggleDay(day.value)"
+                class="w-11 h-9 rounded-md text-xs font-semibold border transition-colors"
+                [class.bg-indigo-600]="isDaySelected(day.value)"
+                [class.text-white]="isDaySelected(day.value)"
+                [class.border-indigo-600]="isDaySelected(day.value)"
+                [class.bg-white]="!isDaySelected(day.value)"
+                [class.dark:bg-slate-800]="!isDaySelected(day.value)"
+                [class.text-slate-500]="!isDaySelected(day.value)"
+                [class.border-slate-200]="!isDaySelected(day.value)"
+                [class.dark:border-slate-700]="!isDaySelected(day.value)">
+                {{ day.label }}
+              </button>
+            }
+          </div>
+        </div>
+      </section>
+
+      <div class="flex justify-end">
+        <button type="submit" [disabled]="saving()"
+          class="px-4 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white disabled:opacity-60">
+          {{ saving() ? 'Saving…' : 'Save settings' }}
+        </button>
+      </div>
+    </form>
+  }
+</div>

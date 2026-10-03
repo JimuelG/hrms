@@ -6,11 +6,17 @@ using Core.Specifications;
 
 namespace Application.Features.Branches;
 
-public class BranchService(IUnitOfWork unit, IGenericRepository<Branch> repo)
+public class BranchService(
+    IUnitOfWork unit, 
+    IGenericRepository<Branch> repo,
+    IFeatureGate featureGate)
     : IBranchService
 {
     public async Task<ServiceResult<BranchDto>> CreateAsync(CreateBranchDto dto, CancellationToken ct = default)
     {
+        var currentCount = await repo.CountAsync(new BranchSearchSpecification(null), ct);
+        await featureGate.EnsureWithinLimitAsync(UsageType.Branches, currentCount, ct);
+        
         var duplicate = await repo.CountAsync(new BranchByCodeSpecification(dto.Code), ct);
         if (duplicate > 0)
             return ServiceResult<BranchDto>.Fail($"A branch with code '{dto.Code}' already exists.", ServiceErrorType.Conflict);

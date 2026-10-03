@@ -35,3 +35,18 @@ export interface DepartmentFormValue {
     description?: string;
     isActive?: boolean;
 }
+
+export interface Position {
+    id: string;
+    title: string;
+    code: string;
+    description?: string;
+    isActive?: boolean;
+}
+
+export interface PositionFormValue {
+    title: string;
+    code: string;
+    description?: string;
+    isActive?: boolean;
+}

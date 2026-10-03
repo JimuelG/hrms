@@ -1,0 +1,154 @@
+<div class="max-w-6xl">
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">Employees</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Everyone currently on record.</p>
+    </div>
+    <button (click)="openCreate()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white text-sm font-medium px-3.5 py-2 rounded-md shrink-0">
+      <i class="fa-solid fa-plus text-xs"></i> New employee
+    </button>
+  </div>
+
+  <div class="mb-4 max-w-xs">
+    <div class="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2">
+      <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs"></i>
+      <input [(ngModel)]="search" (input)="load()" placeholder="Search name, number, or email" class="bg-transparent outline-none text-sm flex-1 w-full placeholder:text-slate-400" />
+    </div>
+  </div>
+
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto">
+    <table class="w-full text-sm min-w-[820px]">
+      <thead>
+        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Name</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Employee #</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Department</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Position</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Status</th>
+          <th class="px-4 py-2.5"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        @for (e of employees(); track e.id) {
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer" (click)="viewEmployee(e)">
+            <td class="px-4 py-3 font-medium">{{ e.firstName }} {{ e.lastName }}</td>
+            <td class="px-4 py-3"><span class="font-mono text-xs bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-1.5 py-0.5">{{ e.employeeNumber }}</span></td>
+            <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ e.departmentName }}</td>
+            <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ e.positionTitle }}</td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400">
+                {{ statusLabel[e.status] }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              <button (click)="openEdit(e, $event)" class="p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800"><i class="fa-solid fa-pen text-xs"></i></button>
+              <button (click)="remove(e, $event)" class="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-950"><i class="fa-solid fa-trash text-xs"></i></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="px-4 py-10 text-center text-slate-400 text-sm">@if (loading()) { Loading employees… } @else { No employees yet. }</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (drawerOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="closeDrawer()"></div>
+  <aside class="fixed top-0 right-0 bottom-0 w-full sm:w-[460px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 z-50 flex flex-col">
+    <header class="flex items-center justify-between px-5 h-14 border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <h2 class="font-semibold text-sm">{{ editing() ? 'Edit employee' : 'New employee' }}</h2>
+      <button (click)="closeDrawer()" class="p-1.5 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-5 space-y-4">
+      @if (formError()) { <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5"><i class="fa-solid fa-circle-exclamation text-xs"></i>{{ formError() }}</div> }
+
+      @if (!editing()) {
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Employee number</span>
+          <input [(ngModel)]="form.employeeNumber" name="employeeNumber" required maxlength="30" class="w-full font-mono border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+        </label>
+      }
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">First name</span>
+          <input [(ngModel)]="form.firstName" name="firstName" required maxlength="100" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+        </label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Last name</span>
+          <input [(ngModel)]="form.lastName" name="lastName" required maxlength="100" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+        </label>
+      </div>
+
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Email</span>
+        <input [(ngModel)]="form.email" name="email" type="email" required maxlength="256" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+      </label>
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Phone</span>
+          <input [(ngModel)]="form.phone" name="phone" maxlength="30" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+        </label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Date of birth</span>
+          <input [(ngModel)]="form.dateOfBirth" name="dateOfBirth" type="date" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+        </label>
+      </div>
+
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Branch</span>
+        <select [(ngModel)]="form.branchId" name="branchId" required class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500">
+          <option value="" disabled>Select a branch</option>
+          @for (b of branches(); track b.id) { <option [value]="b.id">{{ b.name }}</option> }
+        </select>
+      </label>
+
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Department</span>
+        <select [(ngModel)]="form.departmentId" name="departmentId" required class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500">
+          <option value="" disabled>Select a department</option>
+          @for (d of departments(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+        </select>
+      </label>
+
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Position</span>
+        <select [(ngModel)]="form.positionId" name="positionId" required class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500">
+          <option value="" disabled>Select a position</option>
+          @for (p of positions(); track p.id) { <option [value]="p.id">{{ p.title }}</option> }
+        </select>
+      </label>
+
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Manager</span>
+        <select [(ngModel)]="form.managerId" name="managerId" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500">
+          <option [ngValue]="null">No manager</option>
+          @for (e of employees(); track e.id) {
+            @if (!editing() || e.id !== editing()!.id) { <option [value]="e.id">{{ e.firstName }} {{ e.lastName }}</option> }
+          }
+        </select>
+      </label>
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Employment type</span>
+          <select [(ngModel)]="form.employmentType" name="employmentType" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500">
+            @for (t of employmentTypes; track t.value) { <option [ngValue]="t.value">{{ t.label }}</option> }
+          </select>
+        </label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Hire date</span>
+          <input [(ngModel)]="form.hireDate" name="hireDate" type="date" required class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+        </label>
+      </div>
+
+      <label class="block">
+        <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Status</span>
+        <select [(ngModel)]="form.status" name="status" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500">
+          @for (s of statuses; track s.value) {
+            @if (editing() || s.value === 3 || s.value === 4) { <option [ngValue]="s.value">{{ s.label }}</option> }
+          }
+        </select>
+        @if (!editing()) {
+          <span class="block text-xs text-slate-400 mt-1">New employees can only start as Probationary or Regular.</span>
+        }
+      </label>
+    </div>
+
+    <footer class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
+      <button type="button" (click)="closeDrawer()" class="px-3.5 py-2 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
+      <button (click)="save()" [disabled]="saving()" class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save employee' }}</button>
+    </footer>
+  </aside>
+}

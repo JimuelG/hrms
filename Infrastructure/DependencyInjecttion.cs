@@ -1,8 +1,13 @@
+using Application.Features.Platform;
+using Application.Features.Settings;
 using Core.Interfaces;
 using Infrastructure.Authorization;
 using Infrastructure.Common;
+using Infrastructure.Features;
+using Infrastructure.Features.Platform;
 using Infrastructure.Identity;
 using Infrastructure.Persistence;
+using Infrastructure.Storage;
 using Infrastructure.Tenancy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -25,17 +30,21 @@ public static class DependencyInjecttion
         services.AddHttpContextAccessor();
         services.AddScoped<SoftDeleteSaveChangesInterceptor>();
 
+        services.AddScoped<ITenantSettingsService, TenantSettingsService>();
+        services.AddScoped<ITenantDirectory, TenantDirectory>();
+        services.AddScoped<IFeatureGate, FeaturesGate>();
+        services.AddScoped<IPlatformTenantService, PlatformTenantService>();
+        services.AddScoped<IPlatformSubscriptionService, PlatformSubscriptionService>();
+        services.AddScoped<IFileStorageService, LocalFileStorageService>();
+
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<AuditSaveChangesInterceptor>();
-
+        
         services.AddOptions<JwtOptions>()
             .Bind(config.GetSection(JwtOptions.Section))
             .ValidateDataAnnotations()
             .ValidateOnStart();
         services.AddDataProtection();
-
-
-        
         
         services.AddIdentityCore<ApplicationUser>(o =>
         {

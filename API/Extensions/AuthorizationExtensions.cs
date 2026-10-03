@@ -8,7 +8,11 @@ public static class AuthorizationExtensions
     {
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
-        services.AddAuthorization();
+        services.AddAuthorization(options =>
+        {
+            options.AddPolicy("PlatformAdmin", p =>
+                p.RequireClaim(Infrastructure.Identity.JwtTokenService.PlatformAdminClaim, "true"));
+        });
 
         services.AddAuthorizationBuilder()
             .AddPolicy("Permission:employees.read", p => p.Requirements.Add(new PermissionRequirement("employees.read")))

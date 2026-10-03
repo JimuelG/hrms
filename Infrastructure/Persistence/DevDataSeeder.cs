@@ -1,5 +1,6 @@
 using Core.Constant;
 using Core.Entities;
+using Core.Enums;
 using Infrastructure.Identity;
 using Infrastructure.Tenancy;
 using Microsoft.AspNetCore.Identity;
@@ -51,6 +52,29 @@ public static class DevDataSeeder
             return u;
         }
 
+        async Task<SubscriptionPlan> EnsurePlan(string code, string name, int employees, int branches, int departments, int hrUsers, PlanFeature features)
+        {
+            var p = await db.SubscriptionPlans.FirstOrDefaultAsync(x => x.Code == code);
+            if (p is null)
+            {
+                p = new SubscriptionPlan
+                {
+                    Code = code,
+                    Name = name,
+                    MaxEmployees = employees,
+                    MaxBranches = branches,
+                    MaxDepartments = departments,
+                    MaxHrUsers = hrUsers,
+                    Features = features
+                };
+
+                db.SubscriptionPlans.Add(p);
+                await db.SaveChangesAsync();
+            }
+
+            return p;
+        }
+
         var acme = await EnsureTenant("acme", "Acme Corp");
         var globex = await EnsureTenant("globex", "Globex Inc");
 
@@ -71,6 +95,31 @@ public static class DevDataSeeder
             await db.SaveChangesAsync();
         }
 
+        var starter = await EnsurePlan("starter", "Starter", employees: 50, branches: 1, departments: 10, hrUsers: 2, PlanFeature.None);
+        var professional = await EnsurePlan("professional", "Professional", employees: 250, branches: 5, departments: 50, hrUsers: 10, PlanFeature.Ats | PlanFeature.Payroll | PlanFeature.Benefits);
+        await EnsurePlan("business", "Business", employees: 1000, branches: -1, departments: -1, hrUsers: 50, PlanFeature.Ats | PlanFeature.Payroll | PlanFeature.Benefits | PlanFeature.AdvancedAnalytics | PlanFeature.BiometricAttendance);
+        await EnsurePlan("enterprise", "Enterprise", employees: -1, branches: -1, departments: -1, hrUsers: -1, (PlanFeature)63);
+
+        async Task EnsureSubscription(Tenant t, SubscriptionPlan plan)
+        {
+            tenantInit.SetTenant(t.Id);
+            var exists = await db.TenantSubscriptions.AnyAsync(s => s.TenantId == t.Id);
+            if (!exists)
+            {
+                db.TenantSubscriptions.Add(new TenantSubscription
+                {
+                   TenantId = t.Id,
+                   SubscriptionPlanId = plan.Id,
+                   Status = TenantSubscriptionStatus.Active 
+                });
+
+                await db.SaveChangesAsync();
+            }
+        }
+
+        await EnsureSubscription(acme, professional);
+        await EnsureSubscription(globex, starter);
+
         tenantInit.SetTenant(acme.Id);
         await EnsureTenantRole(db, acme, "HR Admin", isSystemRole: true,
         [
@@ -84,7 +133,10 @@ public static class DevDataSeeder
            Permissions.Branches.Delete,
            Permissions.Departments.Read,
            Permissions.Departments.Write,
-           Permissions.Departments.Delete
+           Permissions.Departments.Delete,
+           Permissions.Positions.Read,
+           Permissions.Positions.Write,
+           Permissions.Positions.Delete,
         ], assignTo:acmeAdmin);
 
         var multiUser = await users.FindByEmailAsync("multi@hrms.test")
@@ -94,16 +146,19 @@ public static class DevDataSeeder
         await EnsureTenantRole(db, globex, "HR Admin", isSystemRole: true,
         [
             Permissions.Employees.Read,
-           Permissions.Employees.Write,
-           Permissions.Employees.Delete,
-           Permissions.Tenant.ManageRoles,
-           Permissions.Tenant.ManageSettings,
-           Permissions.Branches.Read,
-           Permissions.Branches.Write,
-           Permissions.Branches.Delete,
-           Permissions.Departments.Read,
-           Permissions.Departments.Write,
-           Permissions.Departments.Delete
+            Permissions.Employees.Write,
+            Permissions.Employees.Delete,
+            Permissions.Tenant.ManageRoles,
+            Permissions.Tenant.ManageSettings,
+            Permissions.Branches.Read,
+            Permissions.Branches.Write,
+            Permissions.Branches.Delete,
+            Permissions.Departments.Read,
+            Permissions.Departments.Write,
+            Permissions.Departments.Delete,
+            Permissions.Positions.Read,
+            Permissions.Positions.Write,
+            Permissions.Positions.Delete,
         ], assignTo: multiUser);
     }
 
@@ -143,4 +198,6 @@ public static class DevDataSeeder
 
         await db.SaveChangesAsync();
     }
+    
+    
 }

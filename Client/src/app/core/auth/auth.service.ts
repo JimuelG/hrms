@@ -16,6 +16,7 @@ export class AuthService {
 
   readonly isAuthenticated = signal(false);
   readonly tenantId = signal<string | null>(null);
+  readonly isPlatformAdmin = signal(false);
 
   getAccessToken(): string | null {
     return this.accessToken;
@@ -68,6 +69,10 @@ export class AuthService {
     this.accessToken= token;
     this.accessTokenExpiresAtUtc = expiresAtUtc;
     this.isAuthenticated.set(true);
+
+    const claims = this.decodeClaims(token);
+    this.tenantId.set(claims.tenantId);
+    this.isPlatformAdmin.set(claims.isPlatformAdmin);
   }
 
   private clearSession(): void {
@@ -75,5 +80,18 @@ export class AuthService {
     this.accessTokenExpiresAtUtc = null;
     this.isAuthenticated.set(false);
     this.tenantId.set(null);
+    this.isPlatformAdmin.set(false);
+  }
+
+  private decodeClaims(token: string): { tenantId: string | null; isPlatformAdmin: boolean} {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return {
+        tenantId: payload['tenant_id'] ?? null,
+        isPlatformAdmin: payload['platform_admin'] === 'true'
+      };
+    } catch {
+      return { tenantId: null, isPlatformAdmin: false };
+    }
   }
 }

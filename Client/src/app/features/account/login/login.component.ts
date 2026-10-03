@@ -33,7 +33,7 @@ export class LoginComponent {
           this.tenantChoices.set(res.tenants)
           return;
         }
-        this.router.navigate(['/dashboard']);
+        this.router.navigate([this.authService.isPlatformAdmin() ? 'platform/tenants' : '/dashboard']);
       },
       error: (err) => {
         if (err.status === 423) {

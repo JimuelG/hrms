@@ -43,6 +43,7 @@ app.UseCors("AngularDev");
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseMiddleware<TenantResolutionMiddleware>();
+app.UseMiddleware<FeatureGateExceptionMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 

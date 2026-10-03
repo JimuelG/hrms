@@ -28,6 +28,13 @@ public static class Permissions
         public const string Delete = "deparments.delete";
     }
 
+    public static class Positions
+    {
+        public const string Read = "positions.read";
+        public const string Write = "positions.write";
+        public const string Delete = "positions.delete";
+    }
+
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
         (Employees.Read, "Employees", "View employee records"),
@@ -41,5 +48,8 @@ public static class Permissions
         (Departments.Read, "Deparments", "View deparments"),
         (Departments.Write, "Deparments", "Create and edit deparments"),
         (Departments.Delete, "Deparments", "Delete deparments"),
+        (Positions.Read, "Positions", "View positions"),
+        (Positions.Write, "Positions", "Create and edit positions"),
+        (Positions.Delete, "Positions", "Delete positions"),
     ];
 }

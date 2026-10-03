@@ -1,0 +1,175 @@
+<div class="max-w-4xl">
+  <a routerLink="/employees" class="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 mb-4">
+    <i class="fa-solid fa-arrow-left text-xs"></i> Back to employees
+  </a>
+
+  @if (employee(); as e) {
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-xl font-semibold tracking-tight">{{ e.firstName }} {{ e.lastName }}</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ e.positionTitle }} · {{ e.departmentName }}</p>
+      </div>
+      <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400">
+        {{ statusLabel[e.status] }}
+      </span>
+    </div>
+
+    <div class="flex gap-1 border-b border-slate-200 dark:border-slate-800 mb-6">
+      @for (t of [['profile','Profile'],['contacts','Emergency Contacts'],['documents','Documents'],['timeline','Timeline']]; track t[0]) {
+        <button (click)="setTab(t[0] === 'profile' ? 'profile' : t[0] === 'contacts' ? 'contacts' : t[0] === 'documents' ? 'documents' : 'timeline')"
+          class="px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors"
+          [class.border-indigo-600]="tab() === t[0]" [class.text-indigo-600]="tab() === t[0]" [class.dark:text-indigo-400]="tab() === t[0]"
+          [class.border-transparent]="tab() !== t[0]" [class.text-slate-500]="tab() !== t[0]" [class.dark:text-slate-400]="tab() !== t[0]">
+          {{ t[1] }}
+        </button>
+      }
+    </div>
+
+    <!-- PROFILE -->
+    @if (tab() === 'profile') {
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5">
+        <dl class="grid sm:grid-cols-2 gap-5 text-sm">
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Employee number</dt><dd class="font-mono">{{ e.employeeNumber }}</dd></div>
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Email</dt><dd>{{ e.email }}</dd></div>
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Phone</dt><dd>{{ e.phone || '—' }}</dd></div>
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Date of birth</dt><dd>{{ e.dateOfBirth || '—' }}</dd></div>
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Branch</dt><dd>{{ e.branchName }}</dd></div>
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Department</dt><dd>{{ e.departmentName }}</dd></div>
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Position</dt><dd>{{ e.positionTitle }}</dd></div>
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Manager</dt><dd>{{ e.managerName || '—' }}</dd></div>
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Employment type</dt><dd>{{ employmentTypeLabel[e.employmentType] }}</dd></div>
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Hire date</dt><dd>{{ e.hireDate }}</dd></div>
+        </dl>
+        <p class="text-xs text-slate-400 mt-5">To edit this profile, use the pencil icon from the employee list.</p>
+      </div>
+    }
+
+    <!-- EMERGENCY CONTACTS -->
+    @if (tab() === 'contacts') {
+      <div class="space-y-3">
+        <div class="flex justify-end">
+          <button (click)="openAddContact()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3 py-1.5 rounded-md">
+            <i class="fa-solid fa-plus text-xs"></i> Add contact
+          </button>
+        </div>
+
+        @if (contactFormOpen()) {
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3">
+            @if (contactError()) { <div class="text-red-600 dark:text-red-400 text-sm">{{ contactError() }}</div> }
+            <div class="grid sm:grid-cols-2 gap-3">
+              <input [(ngModel)]="contactForm.name" placeholder="Name" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+              <input [(ngModel)]="contactForm.relationship" placeholder="Relationship" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+              <input [(ngModel)]="contactForm.phone" placeholder="Phone" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+              <input [(ngModel)]="contactForm.alternatePhone" placeholder="Alternate phone" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+            </div>
+            <input [(ngModel)]="contactForm.address" placeholder="Address" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+            <label class="flex items-center gap-2 text-sm"><input type="checkbox" [(ngModel)]="contactForm.isPrimary" /> Primary contact</label>
+            <div class="flex justify-end gap-2">
+              <button (click)="contactFormOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+              <button (click)="saveContact()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white">Save</button>
+            </div>
+          </div>
+        }
+
+        @for (c of contacts(); track c.id) {
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 flex items-start justify-between">
+            <div>
+              <div class="font-medium text-sm flex items-center gap-2">
+                {{ c.name }}
+                @if (c.isPrimary) { <span class="text-xs font-medium px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400">Primary</span> }
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ c.relationship }} · {{ c.phone }}</div>
+              @if (c.address) { <div class="text-xs text-slate-400 mt-1">{{ c.address }}</div> }
+            </div>
+            <button (click)="removeContact(c)" class="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"><i class="fa-solid fa-trash text-xs"></i></button>
+          </div>
+        } @empty {
+          <p class="text-sm text-slate-400 text-center py-8">No emergency contacts on file.</p>
+        }
+      </div>
+    }
+
+    <!-- DOCUMENTS -->
+    @if (tab() === 'documents') {
+      <div class="space-y-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+          @if (uploadError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ uploadError() }}</div> }
+          <div class="grid sm:grid-cols-3 gap-3">
+            <input [(ngModel)]="uploadType" placeholder="Document type (e.g. Resume)" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+            <input type="date" [(ngModel)]="uploadExpiration" placeholder="Expiration (optional)" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+            <input type="file" (change)="onFileSelected($event)" class="text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-slate-100 dark:file:bg-slate-800 file:text-xs file:font-medium" />
+          </div>
+          <button (click)="uploadDocument()" [disabled]="uploading() || !selectedFile || !uploadType"
+            class="mt-3 px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-50">
+            {{ uploading() ? 'Uploading…' : 'Upload document' }}
+          </button>
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800">
+          @for (d of documents(); track d.id) {
+            <div class="p-4 flex items-center justify-between gap-4">
+              <div class="min-w-0">
+                <div class="font-medium text-sm truncate">{{ d.documentType }} — {{ d.originalFileName }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2">
+                  @if (d.status === DocumentStatus.Pending) {
+                    <span class="inline-flex items-center gap-1.5 text-amber-700 dark:text-amber-400"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Pending</span>
+                  } @else if (d.status === DocumentStatus.Verified) {
+                    <span class="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Verified</span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1.5 text-red-700 dark:text-red-400"><span class="w-1.5 h-1.5 rounded-full bg-red-500"></span> Rejected: {{ d.rejectionReason }}</span>
+                  }
+                </div>
+              </div>
+              <div class="flex items-center gap-1 shrink-0">
+                @if (d.status === DocumentStatus.Pending) {
+                  <button (click)="verifyDocument(d)" title="Verify" class="p-1.5 rounded text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950"><i class="fa-solid fa-check text-xs"></i></button>
+                  <button (click)="rejectDocument(d)" title="Reject" class="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"><i class="fa-solid fa-xmark text-xs"></i></button>
+                }
+                <button (click)="downloadDocument(d)" title="Download" class="p-1.5 rounded text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950"><i class="fa-solid fa-download text-xs"></i></button>
+                <button (click)="removeDocument(d)" title="Delete" class="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"><i class="fa-solid fa-trash text-xs"></i></button>
+              </div>
+            </div>
+          } @empty {
+            <p class="text-sm text-slate-400 text-center py-8">No documents uploaded yet.</p>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- TIMELINE -->
+    @if (tab() === 'timeline') {
+      <div class="space-y-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+          <div class="grid sm:grid-cols-2 gap-3">
+            <input [(ngModel)]="noteTitle" placeholder="Note title" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+            <input [(ngModel)]="noteDescription" placeholder="Details (optional)" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+          </div>
+          <button (click)="addNote()" [disabled]="addingNote() || !noteTitle"
+            class="mt-3 px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-50">
+            {{ addingNote() ? 'Adding…' : 'Add note' }}
+          </button>
+        </div>
+
+        <div class="relative pl-6">
+          <div class="absolute left-[9px] top-2 bottom-2 w-px bg-slate-200 dark:bg-slate-800"></div>
+          @for (t of timeline(); track t.id) {
+            <div class="relative pb-5">
+              <div class="absolute -left-6 top-0.5 w-[18px] h-[18px] rounded-full bg-white dark:bg-slate-900 border-2 border-indigo-500 flex items-center justify-center">
+                <i class="fa-solid {{ timelineIcons[t.eventType] }} text-[8px] text-indigo-600 dark:text-indigo-400"></i>
+              </div>
+              <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3.5">
+                <div class="flex items-center justify-between">
+                  <div class="font-medium text-sm">{{ t.title }}</div>
+                  <div class="text-xs text-slate-400">{{ t.eventDateUtc | date:'MMM d, y, h:mm a' }}</div>
+                </div>
+                @if (t.description) { <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ t.description }}</div> }
+              </div>
+            </div>
+          } @empty {
+            <p class="text-sm text-slate-400 text-center py-8">No timeline events yet.</p>
+          }
+        </div>
+      </div>
+    }
+  }
+</div>
