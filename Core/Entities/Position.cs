@@ -7,5 +7,6 @@ public class Position : SoftDeletableEntity, ITenantEntity, IAuditable
     public string Title { get; set; } = default!;
     public string Code { get; set; } = default!;
     public string? Description { get; set; }
+    public bool IsManagerial { get; set; }
     public bool IsActive { get; set; } = true;
 }

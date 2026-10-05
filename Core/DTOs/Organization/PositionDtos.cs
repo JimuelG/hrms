@@ -6,6 +6,7 @@ public sealed record PositionDto(
     string Title,
     string Code,
     string? Description,
+    bool IsManagerial,
     bool IsActive,
     DateTime CreatedAtUtc);
 
@@ -17,6 +18,7 @@ public sealed class CreatePositionDto
     public string Code { get; init; } = "";
     [MaxLength(500)]
     public string? Description { get; init; }
+    public bool IsManagerial { get; init; }
 }
 
 public sealed class UpdatePositionDto
@@ -27,5 +29,6 @@ public sealed class UpdatePositionDto
     public string Code { get; init; } = "";
     [MaxLength(500)]
     public string? Description { get; init; }
+    public bool IsManagerial { get; init; }
     public bool IsActive { get; init; } = true;
 }

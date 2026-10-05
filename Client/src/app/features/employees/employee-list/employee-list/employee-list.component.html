@@ -1,12 +1,26 @@
 <div class="max-w-6xl">
+
+  @if (deleteError()) {
+    <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4">
+      <i class="fa-solid fa-circle-exclamation text-xs"></i>
+      {{ deleteError() }}
+    </div>
+  }
+  
   <div class="flex items-start justify-between mb-6 gap-4">
     <div>
       <h1 class="text-xl font-semibold tracking-tight">Employees</h1>
       <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Everyone currently on record.</p>
     </div>
-    <button (click)="openCreate()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white text-sm font-medium px-3.5 py-2 rounded-md shrink-0">
-      <i class="fa-solid fa-plus text-xs"></i> New employee
-    </button>
+    <div class="flex items-center gap-2 shrink-0">
+      <a routerLink="/employees/org-chart"
+        class="flex items-center gap-2 text-sm font-medium px-3.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
+        <i class="fa-solid fa-sitemap text-xs"></i> Org chart
+      </a>
+      <button (click)="openCreate()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white text-sm font-medium px-3.5 py-2 rounded-md">
+        <i class="fa-solid fa-plus text-xs"></i> New employee
+      </button>
+    </div>
   </div>
 
   <div class="mb-4 max-w-xs">
@@ -116,8 +130,10 @@
       <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Manager</span>
         <select [(ngModel)]="form.managerId" name="managerId" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500">
           <option [ngValue]="null">No manager</option>
-          @for (e of employees(); track e.id) {
-            @if (!editing() || e.id !== editing()!.id) { <option [value]="e.id">{{ e.firstName }} {{ e.lastName }}</option> }
+          @for (m of eligibleManagers(); track m.id) {
+            @if (!editing() || m.id !== editing()!.id) {
+              <option [value]="m.id">{{ m.fullName }} — {{ m.positionTitle }}</option>
+            }
           }
         </select>
       </label>

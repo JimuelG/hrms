@@ -79,7 +79,7 @@ public sealed class EmployeeDocumentService(
         };
 
         documents.Add(document);
-        timeline.Record(employeeId, TimeLineEventType.DocumentUploaded, $"Uploaded: {documentType}", saved.OriginalFileName);
+        timeline.Record(TimelineSubjectType.Employee, employeeId, TimeLineEventType.DocumentUploaded, $"Uploaded: {documentType}", saved.OriginalFileName);
         await unit.Complete();
 
         return ServiceResult<EmployeeDocumentDto>.Success(ToDto(document));
@@ -102,7 +102,7 @@ public sealed class EmployeeDocumentService(
         document.VerifiedAtUtc = DateTime.UtcNow;
         document.RejectionReason = (DocumentStatus)dto.Status == DocumentStatus.Rejected ? dto.RejectionReason : null;
 
-        timeline.Record(employeeId,
+        timeline.Record(TimelineSubjectType.Employee, employeeId,
             (DocumentStatus)dto.Status == DocumentStatus.Verified ? TimeLineEventType.DocumentVerified : TimeLineEventType.DocumentRejected,
             $"{document.DocumentType} {((DocumentStatus)dto.Status == DocumentStatus.Verified ? "verified" : "rejected")}",
             (DocumentStatus)dto.Status == DocumentStatus.Rejected ? dto.RejectionReason : null,

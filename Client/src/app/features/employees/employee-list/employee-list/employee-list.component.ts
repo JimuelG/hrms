@@ -6,7 +6,7 @@ import { EmployeeService } from '../../../../core/services/employee.service';
 import { BranchService } from '../../../../core/services/branch.service';
 import { DepartmentService } from '../../../../core/services/department.service';
 import { PositionService } from '../../../../core/services/position.service';
-import { Employee, EMPLOYEE_STATUS_LABELS, EmployeeFormValue, EmployeeStatus, EMPLOYMENT_TYPE_LABELS, EmploymentType } from '../../../../shared/models/employee';
+import { Employee, EMPLOYEE_STATUS_LABELS, EmployeeFormValue, EmployeeStatus, EmployeeSummary, EMPLOYMENT_TYPE_LABELS, EmploymentType } from '../../../../shared/models/employee';
 import { Branch, Department, Position } from '../../../../shared/models/organization';
 import { extractApiError } from '../../../../shared/utils/api-error.util';
 import { forkJoin, last } from 'rxjs';
@@ -32,6 +32,7 @@ export class EmployeeListComponent implements OnInit {
   branches = signal<Branch[]>([]);
   departments = signal<Department[]>([]);
   positions = signal<Position[]>([]);
+  eligibleManagers = signal<EmployeeSummary[]>([]);
 
   loading = signal(true);
   search = '';
@@ -39,6 +40,7 @@ export class EmployeeListComponent implements OnInit {
   drawerOpen = signal(false);
   editing = signal<Employee | null>(null);
   formError = signal<string | null>(null);
+  deleteError = signal<string | null>(null);
   saving = signal(false);
   form: EmployeeFormValue = this.emptyForm();
 
@@ -49,14 +51,20 @@ export class EmployeeListComponent implements OnInit {
   statusLabel = EMPLOYEE_STATUS_LABELS;
 
   ngOnInit(): void {
+    this.loadAll();
+  }
+
+  loadAll(): void {
     forkJoin({
       branches: this.branchService.getAll(),
       departments: this.departmentService.getAll(),
-      positions: this.positionService.getAll()
-    }).subscribe(({ branches, departments, positions }) => {
+      positions: this.positionService.getAll(),
+      eligibleManagers: this.employeeService.getEligibleManagers()
+    }).subscribe(({ branches, departments, positions, eligibleManagers }) => {
       this.branches.set(branches);
       this.departments.set(departments);
       this.positions.set(positions);
+      this.eligibleManagers.set(eligibleManagers);
     });
     this.load();
   }
@@ -122,7 +130,7 @@ export class EmployeeListComponent implements OnInit {
       next: () => {
         this.saving.set(false);
         this.closeDrawer();
-        this.load();
+        this.loadAll();
       },
       error: (err) => {
         this.saving.set(false);
@@ -134,8 +142,18 @@ export class EmployeeListComponent implements OnInit {
   remove(e: Employee, event: Event): void {
     event.stopPropagation();
 
+    this.deleteError.set(null);
+
     if (!confirm(`Delete ${e.firstName} ${e.lastName}?`)) return;
-    this.employeeService.delete(e.id).subscribe(() => this.load());
+
+    this.employeeService.delete(e.id).subscribe({
+      next: () => {
+        this.loadAll();
+      },
+      error: (err) => {
+        this.deleteError.set(extractApiError(err));
+      }
+    });
   }
 
   private emptyForm(): EmployeeFormValue {

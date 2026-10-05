@@ -1,0 +1,23 @@
+<div class="max-w-4xl">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">Org chart</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Reporting lines across your company.</p>
+    </div>
+    <a routerLink="/employees" class="text-sm font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+      View as list
+    </a>
+  </div>
+
+  @if (loading()) {
+    <p class="text-sm text-slate-400">Loading org chart…</p>
+  } @else if (isEmpty()) {
+    <p class="text-sm text-slate-400 text-center py-10">No employees yet.</p>
+  } @else {
+    <div class="space-y-2">
+      @for (node of tree(); track node.employee.id) {
+        <app-org-chart-node [node]="node" />
+      }
+    </div>
+  }
+</div>

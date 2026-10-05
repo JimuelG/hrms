@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment.development';
 import { Observable } from 'rxjs';
-import { Employee, EmployeeFormValue } from '../../shared/models/employee';
+import { Employee, EmployeeFormValue, EmployeeSummary } from '../../shared/models/employee';
 
 @Injectable({
   providedIn: 'root',
@@ -30,5 +30,11 @@ export class EmployeeService {
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${id}`);
+  }
+
+  getEligibleManagers(excludeEmployeeId?: string): Observable<EmployeeSummary[]> {
+    const params = excludeEmployeeId ? { params: { excludeEmployeeId } } : {};
+
+    return this.http.get<EmployeeSummary[]>(`${this.baseUrl}/eligible-managers`, params);
   }
 }

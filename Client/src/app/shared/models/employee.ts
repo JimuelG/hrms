@@ -151,3 +151,9 @@ export interface AddTimelimeNoteValue {
     description?: string;
     eventDateUtc?: string;
 }
+
+export interface EmployeeSummary {
+    id: string;
+    fullName: string;
+    positionTitle: string;
+}

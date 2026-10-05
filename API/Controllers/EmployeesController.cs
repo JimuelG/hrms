@@ -121,7 +121,7 @@ public class EmployeesController(IEmployeeService service)
     [HttpGet("{employeeId:guid}/timeline")]
     public async Task<IActionResult> GetTimeline(
         Guid employeeId, [FromServices] ITimelineService timeline, CancellationToken ct) =>
-        Ok(await timeline.GetForEmployeeAsync(employeeId, ct));
+        Ok(await timeline.GetForEmployeeAsync(TimelineSubjectType.Employee, employeeId, ct));
 
     [HasPermission(Permissions.Employees.Write)]
     [HttpPost("{employeeId:guid}/timeline/notes")]
@@ -132,6 +132,7 @@ public class EmployeesController(IEmployeeService service)
         Guid.TryParse(userIdClaim, out var userId);
 
         timeline.Record(
+            TimelineSubjectType.Employee,
             employeeId,
             TimeLineEventType.Note,
             dto.Title,
@@ -144,4 +145,10 @@ public class EmployeesController(IEmployeeService service)
 
         return StatusCode(201);
     }
+
+    [HasPermission(Permissions.Employees.Read)]
+    [HttpGet("eligible-managers")]
+    public async Task<IActionResult> GetEligibleManagers(
+        [FromQuery] Guid? excludeEmployeeId, CancellationToken ct) =>
+        Ok(await service.GetEligibleManagersAsync(excludeEmployeeId, ct));
 }

@@ -2,6 +2,7 @@ using Application.Features.Branches;
 using Application.Features.Departments;
 using Application.Features.Employees;
 using Application.Features.Positions;
+using Application.Features.Recruitment;
 using Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,10 @@ public static class DependencyInjection
         services.AddScoped<IEmergencyContactService, EmergencyContactService>();
         services.AddScoped<IEmployeeDocumentService, EmployeeDocumentService>();
         services.AddScoped<ITimelineService, TimelineService>();
+        services.AddScoped<IJobPostingService, JobPostingService>();
+        services.AddScoped<IApplicantService, ApplicantService>();
+        services.AddScoped<IApplicationService, ApplicationService>();
+        services.AddScoped<IInterviewService, InterviewService>();
 
         return services;
     }

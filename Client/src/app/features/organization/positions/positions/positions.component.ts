@@ -56,6 +56,7 @@ export class PositionsComponent implements OnInit{
       title: p.title,
       code: p.code,
       description: p.description ?? '',
+      isManagerial: p.isManagerial,
       isActive: p.isActive
     };
     this.formError.set(null);
@@ -98,6 +99,7 @@ export class PositionsComponent implements OnInit{
       title: '',
       code: '',
       description: '',
+      isManagerial: false,
       isActive: true
     }
   };

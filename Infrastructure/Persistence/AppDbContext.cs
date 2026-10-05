@@ -37,6 +37,12 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<EmployeeEmergencyContact> EmployeeEmergencyContacts => Set<EmployeeEmergencyContact>();
     public DbSet<EmployeeDocument> EmployeeDocuments => Set<EmployeeDocument>();
     public DbSet<EmployeeTimelineEvent> EmployeeTimelineEvents => Set<EmployeeTimelineEvent>();
+    public DbSet<JobPosting> JobPostings => Set<JobPosting>();
+    public DbSet<Applicant> Applicants => Set<Applicant>();
+    public DbSet<Core.Entities.Application> Applications => Set<Core.Entities.Application>();
+    public DbSet<Interview> Interviews => Set<Interview>();
+    public DbSet<InterviewEvaluation> InterviewEvaluations => Set<InterviewEvaluation>();
+    public DbSet<TimelineEvent> TimelineEvents => Set<TimelineEvent>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

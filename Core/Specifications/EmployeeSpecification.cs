@@ -1,4 +1,5 @@
 using Core.Entities;
+using Core.Enums;
 
 namespace Core.Specifications;
 public sealed class EmployeeSearchSpecification : BaseSpecfication<Employee>
@@ -44,5 +45,24 @@ public sealed class EmployeeByEmailSpecification : BaseSpecfication<Employee>
         : base(e => e.Email == email && (exludeId == null || e.Id != exludeId))
     {
         
+    }
+}
+
+public sealed class EmployeesByManagerSpecification : BaseSpecfication<Employee>
+{
+    public EmployeesByManagerSpecification(Guid managerId) : base(e => e.ManagerId == managerId) { }
+}
+
+public sealed class EligibleManagersSpecification : BaseSpecfication<Employee>
+{
+    private static readonly EmployeeStatus[] Excluded = [EmployeeStatus.Regular, EmployeeStatus.Terminated, EmployeeStatus.Archived];
+
+    public EligibleManagersSpecification(Guid? excludeEmployeeId = null)
+        : base(e => e.Position.IsManagerial
+            && !Excluded.Contains(e.Status)
+            && (excludeEmployeeId == null || e.Id != excludeEmployeeId))
+    {
+        AddInclude(e => e.Position);
+        AddOrderBy(e => e.LastName);
     }
 }

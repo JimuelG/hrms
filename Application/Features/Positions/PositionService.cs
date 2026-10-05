@@ -21,7 +21,8 @@ public sealed class PositionService(
         {
             Title = dto.Title,
             Code = dto.Code,
-            Description = dto.Description
+            Description = dto.Description,
+            IsManagerial = dto.IsManagerial
         };
 
         repo.Add(position);
@@ -61,6 +62,7 @@ public sealed class PositionService(
         position.Title = dto.Title;
         position.Code = dto.Code;
         position.Description = dto.Description;
+        position.IsManagerial = dto.IsManagerial;
         position.IsActive = dto.IsActive;
 
         await unit.Complete();
@@ -73,6 +75,7 @@ public sealed class PositionService(
             p.Title,
             p.Code,
             p.Description,
+            p.IsManagerial,
             p.IsActive,
             p.CreatedAtUtc
         );

@@ -1,3 +1,5 @@
+using Core.Entities;
+
 namespace Core.Constant;
 public static class Permissions
 {
@@ -35,6 +37,32 @@ public static class Permissions
         public const string Delete = "positions.delete";
     }
 
+    public static class JobPosting
+    {
+        public const string Read = "jobpostings.read";
+        public const string Write = "jobpostings.write";
+        public const string Delete = "jobpostings.delete";
+    }
+
+    public static class Applicants
+    {
+        public const string Read = "applicants.read";
+        public const string Write = "applicants.write";
+        public const string Delete = "applicant.delete";
+    }
+
+    public static class Applications
+    {
+        public const string Read = "applications.read";
+        public const string Write = "applications.write";
+    }
+
+    public static class Interviews
+    {
+        public const string Read = "interviews.read";
+        public const string Write = "interviews.write";
+    }
+
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
         (Employees.Read, "Employees", "View employee records"),
@@ -51,5 +79,15 @@ public static class Permissions
         (Positions.Read, "Positions", "View positions"),
         (Positions.Write, "Positions", "Create and edit positions"),
         (Positions.Delete, "Positions", "Delete positions"),
+        (JobPosting.Read, "Recruitment", "View job postings"),
+        (JobPosting.Write, "Recruitment", "Create and edit job postings"),
+        (JobPosting.Delete, "Recruitment", "Delete job postings"),
+        (Applicants.Read, "Applicants", "View applicants"),
+        (Applicants.Write, "Applicants", "Create and edit applicants"),
+        (Applicants.Delete, "Applicants", "Delete applicants"),
+        (Applications.Read, "Applications", "View Applcations"),
+        (Applications.Write, "Applications", "Create and Edit Applcations"),
+        (Interviews.Read, "Interviews", "View interviews"),
+        (Interviews.Write, "Interviews", "Create and edit interviews"),
     ];
 }

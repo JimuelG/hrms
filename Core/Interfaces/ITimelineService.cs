@@ -5,12 +5,13 @@ namespace Core.Interfaces;
 public interface ITimelineService
 {
     void Record(
-        Guid employeeId,
+        TimelineSubjectType subjectType,
+        Guid subjectId,
         TimeLineEventType type,
         string title,
         string? description = null,
         DateTime? eventDateUtc = null,
         Guid? recorededByUserId = null);
 
-    Task<IReadOnlyList<TimelineEventDto>> GetForEmployeeAsync(Guid employeeId, CancellationToken ct = default);
+    Task<IReadOnlyList<TimelineEventDto>> GetForEmployeeAsync(TimelineSubjectType subjectType, Guid subjectId, CancellationToken ct = default);
 }

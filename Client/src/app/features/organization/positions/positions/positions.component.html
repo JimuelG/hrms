@@ -70,8 +70,14 @@
         <input [(ngModel)]="form.description" name="description" maxlength="500" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
       </label>
       @if (editing()) {
-        <label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" [(ngModel)]="form.isActive" name="isActive" class="rounded border-slate-300 dark:border-slate-600 text-indigo-600" /> Active</label>
+        <label class="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" [(ngModel)]="form.isActive" name="isActive" class="rounded border-slate-300 dark:border-slate-600 text-indigo-600" /> Active
+        </label>
       }
+      <label class="flex items-center gap-2 text-sm font-medium">
+          <input type="checkbox" [(ngModel)]="form.isManagerial" name="isManagerial" class="rounded border-slate-300 dark:border-slate-600 text-indigo-600" />
+            Managerial position (eligible to be assigned as someone's manager)
+        </label>
     </div>
     <footer class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800">
       <button type="button" (click)="closeDrawer()" class="px-3.5 py-2 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>

@@ -41,6 +41,7 @@ export interface Position {
     title: string;
     code: string;
     description?: string;
+    isManagerial: boolean;
     isActive?: boolean;
 }
 
@@ -48,5 +49,6 @@ export interface PositionFormValue {
     title: string;
     code: string;
     description?: string;
+    isManagerial: boolean;
     isActive?: boolean;
 }

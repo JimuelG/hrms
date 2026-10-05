@@ -1,4 +1,5 @@
 using Core.Common;
+using Core.DTOs.Employees;
 using Core.DTOs.Organization;
 using Core.Entities;
 using Core.Enums;
@@ -54,7 +55,7 @@ public sealed class EmployeeService(
         };
 
         employees.Add(employee);
-        timeline.Record(employee.Id, TimeLineEventType.Hired, $"Hired as {((EmploymentType)dto.EmploymentType).ToDisplayName()}", $"Joined on {dto.HireDate:yyyy-MM-dd}.");
+        timeline.Record(TimelineSubjectType.Employee, employee.Id, TimeLineEventType.Hired, $"Hired as {((EmploymentType)dto.EmploymentType).ToDisplayName()}", $"Joined on {dto.HireDate:yyyy-MM-dd}.");
         await unit.Complete();
 
         var saved = await employees.GetEntityWithSpec(new EmployeeWithRelationsByIdSpecification(employee.Id), ct);
@@ -67,7 +68,11 @@ public sealed class EmployeeService(
         if (employee is null) 
             return ServiceResult<bool>.Fail("Employee not found", ServiceErrorType.NotFound);
 
-        var hasReports = await employees.CountAsync(new EmployeeSearchSpecification(null), ct) > 0 && employee.DirectReports.Count > 0;
+        var directReportCount = await employees.CountAsync(new EmployeesByManagerSpecification(id), ct);
+        if (directReportCount > 0)
+            return ServiceResult<bool>.Fail(
+                $"This employee manages {directReportCount} other employee(s). Reassign their reports first.");
+
 
         employees.Remove(employee);
         await unit.Complete();
@@ -114,20 +119,25 @@ public sealed class EmployeeService(
         employee.Status = (EmployeeStatus)dto.Status;
         
         if (oldStatus != (EmployeeStatus)dto.Status)
-            timeline.Record(id, TimeLineEventType.StatusChanged, $"Status changed to {((EmployeeStatus)dto.Status).ToDisplayName()}", $"Previously {oldStatus}");
+            timeline.Record(TimelineSubjectType.Employee, employee.Id, TimeLineEventType.Hired, $"Status changed to {((EmployeeStatus)dto.Status).ToDisplayName()}", $"Previously {oldStatus}");
         if (oldBranchId != dto.BranchId)
-            timeline.Record(id, TimeLineEventType.BranchChanged, "Branch changed");
+            timeline.Record(TimelineSubjectType.Employee, employee.Id, TimeLineEventType.BranchChanged, "Branch changed");
         if (oldDepartmentId != dto.DepartmentId)
-            timeline.Record(id, TimeLineEventType.DepartmentChanged, "Department changed");
+            timeline.Record(TimelineSubjectType.Employee, employee.Id, TimeLineEventType.DepartmentChanged, "Department changed");
         if (oldPositionId != dto.PositionId)
-            timeline.Record(id, TimeLineEventType.PositionChanged, "Position changed");
+            timeline.Record(TimelineSubjectType.Employee, employee.Id, TimeLineEventType.PositionChanged, "Position changed");
         if (oldManagerId != dto.ManagerId)
-            timeline.Record(id, TimeLineEventType.ManagerChanged, "Manager changed");
+            timeline.Record(TimelineSubjectType.Employee, employee.Id, TimeLineEventType.ManagerChanged, "Manager changed");
 
         await unit.Complete();
         var saved = await employees.GetEntityWithSpec(new EmployeeWithRelationsByIdSpecification(id), ct);
         return ServiceResult<EmployeeDto>.Success(ToDto(saved!));
     }
+
+    public async Task<IReadOnlyList<EmployeeSummaryDto>> GetEligibleManagersAsync(Guid? excludeEmployeeId, CancellationToken ct = default) =>
+        (await employees.ListAsync(new EligibleManagersSpecification(excludeEmployeeId), ct))
+            .Select(e => new EmployeeSummaryDto(e.Id, $"{e.FirstName} {e.LastName}", e.Position.Title))
+            .ToList();
 
     private async Task<string?> ValidateFofeignKeysAsync(
         Guid branchId,

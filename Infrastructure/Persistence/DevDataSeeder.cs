@@ -137,6 +137,16 @@ public static class DevDataSeeder
            Permissions.Positions.Read,
            Permissions.Positions.Write,
            Permissions.Positions.Delete,
+           Permissions.JobPosting.Read,
+           Permissions.JobPosting.Write,
+           Permissions.JobPosting.Delete,
+           Permissions.Applicants.Read,
+           Permissions.Applicants.Write,
+           Permissions.Applicants.Delete,
+           Permissions.Applications.Read,
+           Permissions.Applications.Write,
+           Permissions.Interviews.Read,
+           Permissions.Interviews.Write
         ], assignTo:acmeAdmin);
 
         var multiUser = await users.FindByEmailAsync("multi@hrms.test")
@@ -159,6 +169,9 @@ public static class DevDataSeeder
             Permissions.Positions.Read,
             Permissions.Positions.Write,
             Permissions.Positions.Delete,
+            Permissions.JobPosting.Read,
+            Permissions.JobPosting.Write,
+            Permissions.JobPosting.Delete,
         ], assignTo: multiUser);
     }
 
