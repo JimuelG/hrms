@@ -28,4 +28,12 @@ public class ApplicationsController(IApplicationService service) : BaseApiContro
     [HttpPut("{id:guid}/status")]
     public async Task<IActionResult> UpdateStatus(Guid id, UpdateApplicationStatusDto dto, CancellationToken ct) =>
         (await service.UpdateStatusAsync(id, dto, ct)).ToActionResult(this);
+
+    [HasPermission(Permissions.Applications.Read)]
+    [HttpGet("{id:guid}")]
+    public async Task<IActionResult> GetById(Guid id, CancellationToken ct)
+    {
+        var application = await service.GetByIdAsync(id, ct);
+        return application is null ? NotFound() : Ok(application);
+    }
 }

@@ -1,0 +1,94 @@
+<div class="max-w-5xl">
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">Applicants</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Candidates in your talent database.</p>
+    </div>
+    <button (click)="openCreate()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3.5 py-2 rounded-md shrink-0">
+      <i class="fa-solid fa-plus text-xs"></i> New applicant
+    </button>
+  </div>
+
+  <div class="mb-4 max-w-xs">
+    <div class="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2">
+      <i class="fa-solid fa-magnifying-glass text-slate-400 text-xs"></i>
+      <input [(ngModel)]="search" (input)="load()" placeholder="Search name or email" class="bg-transparent outline-none text-sm flex-1 w-full placeholder:text-slate-400" />
+    </div>
+  </div>
+
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto">
+    <table class="w-full text-sm min-w-[640px]">
+      <thead>
+        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Name</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Email</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Resume</th>
+          <th class="px-4 py-2.5"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        @for (a of applicants(); track a.id) {
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer" (click)="openEdit(a)">
+            <td class="px-4 py-3 font-medium">{{ a.firstName }} {{ a.lastName }}</td>
+            <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ a.email }}</td>
+            <td class="px-4 py-3">
+              @if (a.resumeOriginalFileName) {
+                <button (click)="downloadResume(a, $event)" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1">
+                  <i class="fa-solid fa-file-arrow-down"></i> {{ a.resumeOriginalFileName }}
+                </button>
+              } @else { <span class="text-xs text-slate-400">None</span> }
+            </td>
+            <td class="px-4 py-3 text-right" (click)="$event.stopPropagation()">
+              <button (click)="remove(a, $event)" class="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"><i class="fa-solid fa-trash text-xs"></i></button>
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="4" class="px-4 py-10 text-center text-slate-400 text-sm">@if (loading()) { Loading… } @else { No applicants yet. }</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (drawerOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="closeDrawer()"></div>
+  <aside class="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 z-50 flex flex-col">
+    <header class="flex items-center justify-between px-5 h-14 border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <h2 class="font-semibold text-sm">{{ editing() ? 'Edit applicant' : 'New applicant' }}</h2>
+      <button (click)="closeDrawer()" class="p-1.5 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="flex-1 overflow-y-auto p-5 space-y-4">
+      @if (formError()) { <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5"><i class="fa-solid fa-circle-exclamation text-xs"></i>{{ formError() }}</div> }
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">First name</span>
+          <input [(ngModel)]="form.firstName" name="firstName" required class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+        </label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Last name</span>
+          <input [(ngModel)]="form.lastName" name="lastName" required class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+        </label>
+      </div>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Email</span>
+        <input [(ngModel)]="form.email" name="email" type="email" required class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+      </label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Phone</span>
+        <input [(ngModel)]="form.phone" name="phone" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+      </label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Skills summary</span>
+        <textarea [(ngModel)]="form.skillsSummary" name="skillsSummary" rows="2" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none"></textarea>
+      </label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Education summary</span>
+        <textarea [(ngModel)]="form.educationSummary" name="educationSummary" rows="2" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none"></textarea>
+      </label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Experience summary</span>
+        <textarea [(ngModel)]="form.experienceSummary" name="experienceSummary" rows="2" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none"></textarea>
+      </label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Resume (PDF/DOC/DOCX)</span>
+        <input type="file" (change)="onFileSelected($event)" class="text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-slate-100 dark:file:bg-slate-800 file:text-xs file:font-medium w-full" />
+      </label>
+    </div>
+    <footer class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
+      <button type="button" (click)="closeDrawer()" class="px-3.5 py-2 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="save()" [disabled]="saving()" class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save applicant' }}</button>
+    </footer>
+  </aside>
+}

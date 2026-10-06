@@ -57,6 +57,12 @@ public class ApplicationService(
     public async Task<IReadOnlyList<ApplicationDto>> GetByApplicantAsync(Guid applicantId, CancellationToken ct = default) =>
         (await applications.ListAsync(new ApplicationsByApplicantSpecification(applicantId), ct)).Select(ToDto).ToList();
 
+    public async Task<ApplicationDto?> GetByIdAsync(Guid id, CancellationToken ct = default)
+    {
+        var application = await applications.GetEntityWithSpec(new ApplicationByIdWithRelationsSpecification(id), ct);
+        return application is null ? null : ToDto(application);
+    }
+
     private static ApplicationDto ToDto(Core.Entities.Application a) => new(
         a.Id,
         a.ApplicantId,
@@ -67,4 +73,5 @@ public class ApplicationService(
         (int)a.Status,
         a.Notes,
         a.AppliedAtUtc);
+
 }

@@ -63,6 +63,12 @@ public static class Permissions
         public const string Write = "interviews.write";
     }
 
+    public static class JobOffers
+    {
+        public const string Read = "joboffers.read";
+        public const string Write = "joboffers.write";
+    }
+
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
         (Employees.Read, "Employees", "View employee records"),
@@ -89,5 +95,7 @@ public static class Permissions
         (Applications.Write, "Applications", "Create and Edit Applcations"),
         (Interviews.Read, "Interviews", "View interviews"),
         (Interviews.Write, "Interviews", "Create and edit interviews"),
+        (JobOffers.Read, "JobOffers", "View job offers"),
+        (JobOffers.Write, "JobOffers", "Create and edit job offers"),
     ];
 }

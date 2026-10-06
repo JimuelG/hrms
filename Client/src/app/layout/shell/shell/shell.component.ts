@@ -26,6 +26,8 @@ export class ShellComponent {
     { label: 'Branches', path: '/organization/branches', icon: 'fa-building' },
     { label: 'Departments', path: '/organization/departments', icon: 'fa-sitemap'},
     { label: 'Positions', path: '/organization/positions', icon: 'fa-id-badge'},
+    { label: 'Applicants', path: '/recruitment/applicants', icon: 'fa-briefcase'},
+    { label: 'Job Postings', path: '/recruitment/job-postings', icon: 'fa-user-group'},
     { label: 'Settings', path: '/settings', icon: 'fa-gear'},
   ];
 

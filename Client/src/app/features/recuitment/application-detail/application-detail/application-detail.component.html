@@ -1,0 +1,185 @@
+<div class="max-w-4xl">
+  <a routerLink="/recruitment/job-postings" class="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 mb-4">
+    <i class="fa-solid fa-arrow-left text-xs"></i> Back to job postings
+  </a>
+
+  @if (application(); as app) {
+    <div class="mb-6">
+      <h1 class="text-xl font-semibold tracking-tight">{{ app.applicantName }}</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Applying for {{ app.jobPostingTitle }} · {{ app.applicantEmail }}</p>
+    </div>
+
+    <div class="flex gap-1 border-b border-slate-200 dark:border-slate-800 mb-6">
+      @for (t of [['overview','Overview'],['interviews','Interviews'],['offer','Offer']]; track t[0]) {
+        <button (click)="setTab(t[0] === 'overview' ? 'overview' : t[0] === 'interviews' ? 'interviews' : 'offer')"
+          class="px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors"
+          [class.border-indigo-600]="tab() === t[0]" [class.text-indigo-600]="tab() === t[0]" [class.dark:text-indigo-400]="tab() === t[0]"
+          [class.border-transparent]="tab() !== t[0]" [class.text-slate-500]="tab() !== t[0]" [class.dark:text-slate-400]="tab() !== t[0]">
+          {{ t[1] }}
+        </button>
+      }
+    </div>
+
+    @if (tab() === 'overview') {
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5">
+        <dl class="grid sm:grid-cols-2 gap-5 text-sm">
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Status</dt><dd>{{ applicationStatusLabel[app.status] }}</dd></div>
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Applied on</dt><dd>{{ app.appliedAtUtc | date:'MMM d, y' }}</dd></div>
+          @if (app.notes) { <div class="sm:col-span-2"><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Notes</dt><dd>{{ app.notes }}</dd></div> }
+        </dl>
+      </div>
+    }
+
+    @if (tab() === 'interviews') {
+      <div class="space-y-3">
+        <div class="flex justify-end">
+          <button (click)="openSchedule()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3 py-1.5 rounded-md">
+            <i class="fa-solid fa-plus text-xs"></i> Schedule interview
+          </button>
+        </div>
+
+        @for (i of interviews(); track i.id) {
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-medium text-sm">{{ interviewTypeLabel[i.type] }} · {{ i.interviewerName }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ i.scheduledAtUtc | date:'MMM d, y, h:mm a' }} · {{ i.durationMinutes }} min</div>
+                @if (i.location) { <div class="text-xs text-slate-400 mt-0.5">{{ i.location }}</div> }
+              </div>
+              <div class="flex items-center gap-2">
+                @if (i.status === InterviewStatus.Scheduled) {
+                  <button (click)="completeInterview(i)" class="text-xs font-medium px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">Mark completed</button>
+                  <button (click)="cancelInterview(i)" class="text-xs font-medium px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-red-50 dark:hover:bg-red-950 text-red-600 dark:text-red-400">Cancel</button>
+                } @else if (i.status === InterviewStatus.Completed && !i.evaluation) {
+                  <button (click)="openEvaluate(i)" class="text-xs font-medium px-2.5 py-1 rounded bg-indigo-600 text-white">Submit evaluation</button>
+                } @else {
+                  <span class="text-xs font-medium text-slate-400">{{ i.status === InterviewStatus.Cancelled ? 'Cancelled' : i.status === InterviewStatus.Completed ? 'Completed' : 'No-show' }}</span>
+                }
+              </div>
+            </div>
+
+            @if (i.evaluation; as ev) {
+              <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 text-sm">
+                <div class="flex items-center gap-2">
+                  <span class="font-medium">Rating: {{ ev.rating }}/5</span>
+                  <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400">{{ recommendationLabel[ev.recommendation] }}</span>
+                </div>
+                @if (ev.strengths) { <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Strengths: {{ ev.strengths }}</div> }
+                @if (ev.concerns) { <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Concerns: {{ ev.concerns }}</div> }
+                @if (ev.notes) { <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ ev.notes }}</div> }
+              </div>
+            }
+
+            @if (evaluatingInterviewId() === i.id) {
+              <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+                <div class="flex items-center gap-2">
+                  <label class="text-xs font-medium">Rating</label>
+                  <input type="number" min="1" max="5" [(ngModel)]="evalRating" class="w-16 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded px-2 py-1 text-sm" />
+                  <select [(ngModel)]="evalRecommendation" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded px-2 py-1 text-sm">
+                    @for (r of recommendationsOptions; track r) { <option [ngValue]="r">
+                        {{ recommendationLabel[r] }}
+                    </option> }
+                  </select>
+                </div>
+                <input [(ngModel)]="evalStrengths" placeholder="Strengths" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded px-2 py-1.5 text-sm" />
+                <input [(ngModel)]="evalConcerns" placeholder="Concerns" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded px-2 py-1.5 text-sm" />
+                <input [(ngModel)]="evalNotes" placeholder="Notes" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded px-2 py-1.5 text-sm" />
+                <div class="flex justify-end gap-2">
+                  <button (click)="evaluatingInterviewId.set(null)" class="text-xs font-medium px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700">Cancel</button>
+                  <button (click)="submitEvaluation()" class="text-xs font-medium px-2.5 py-1 rounded bg-indigo-600 text-white">Submit</button>
+                </div>
+              </div>
+            }
+          </div>
+        } @empty {
+          <p class="text-sm text-slate-400 text-center py-8">No interviews scheduled yet.</p>
+        }
+      </div>
+    }
+
+    @if (tab() === 'offer') {
+      <div class="space-y-3">
+        <div class="flex justify-end">
+          <button (click)="openCreateOffer()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3 py-1.5 rounded-md">
+            <i class="fa-solid fa-plus text-xs"></i> New offer
+          </button>
+        </div>
+
+        @for (o of offers(); track o.id) {
+          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-medium text-sm">{{ o.proposedSalary | number }} {{ o.currency }}</div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Starting {{ o.proposedStartDate }}</div>
+              </div>
+              <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400">{{ offerStatusLabel[o.status] }}</span>
+            </div>
+            <div class="flex gap-2 mt-3">
+              @if (o.status === JobOfferStatus.Draft) {
+                <button (click)="sendOffer(o)" class="text-xs font-medium px-2.5 py-1 rounded bg-indigo-600 text-white">Send</button>
+                <button (click)="withdrawOffer(o)" class="text-xs font-medium px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700">Withdraw</button>
+              } @else if (o.status === JobOfferStatus.Sent) {
+                <button (click)="acceptOffer(o)" class="text-xs font-medium px-2.5 py-1 rounded bg-emerald-600 text-white">Accept</button>
+                <button (click)="declineOffer(o)" class="text-xs font-medium px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400">Decline</button>
+                <button (click)="withdrawOffer(o)" class="text-xs font-medium px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700">Withdraw</button>
+              } @else if (o.declineReason) {
+                <span class="text-xs text-slate-400">Reason: {{ o.declineReason }}</span>
+              }
+            </div>
+          </div>
+        } @empty {
+          <p class="text-sm text-slate-400 text-center py-8">No offers yet.</p>
+        }
+      </div>
+    }
+  }
+</div>
+
+@if (scheduleOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="scheduleOpen.set(false)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5">
+    <h2 class="font-semibold text-sm mb-3">Schedule interview</h2>
+    @if (scheduleError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ scheduleError() }}</div> }
+    <div class="space-y-3">
+      <select [(ngModel)]="scheduleForm.type" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+        @for (t of interviewTypeOptions; track t) { 
+            <option [ngValue]="t">
+                {{ interviewTypeLabel[t] }}
+            </option>
+        }
+      </select>
+      <input type="datetime-local" [(ngModel)]="scheduleForm.scheduledAtUtc" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+      <input type="number" [(ngModel)]="scheduleForm.durationMinutes" placeholder="Duration (minutes)" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+      <input [(ngModel)]="scheduleForm.location" placeholder="Location or video link" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+      <select [(ngModel)]="scheduleForm.interviewerId" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+        <option value="" disabled selected>Select interviewer</option>
+        @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.firstName }} {{ e.lastName }}</option> }
+      </select>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="scheduleOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="submitSchedule()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white">Schedule</button>
+    </div>
+  </div>
+}
+
+@if (offerFormOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="offerFormOpen.set(false)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5">
+    <h2 class="font-semibold text-sm mb-3">New offer</h2>
+    @if (offerError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ offerError() }}</div> }
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-2">
+        <input type="number" [(ngModel)]="offerForm.proposedSalary" placeholder="Salary" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+        <input [(ngModel)]="offerForm.currency" placeholder="Currency" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+      </div>
+      <input type="date" [(ngModel)]="offerForm.proposedStartDate" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+      <input type="date" [(ngModel)]="offerForm.expiresOn" placeholder="Expires on" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+      <textarea [(ngModel)]="offerForm.terms" placeholder="Terms" rows="3" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none"></textarea>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="offerFormOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="submitOffer()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white">Create offer</button>
+    </div>
+  </div>
+}

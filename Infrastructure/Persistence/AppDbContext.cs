@@ -43,6 +43,7 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<Interview> Interviews => Set<Interview>();
     public DbSet<InterviewEvaluation> InterviewEvaluations => Set<InterviewEvaluation>();
     public DbSet<TimelineEvent> TimelineEvents => Set<TimelineEvent>();
+    public DbSet<JobOffer> JobOffers => Set<JobOffer>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

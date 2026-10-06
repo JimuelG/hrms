@@ -9,4 +9,5 @@ public interface IApplicationService
     Task<ServiceResult<ApplicationDto>> UpdateStatusAsync(Guid id, UpdateApplicationStatusDto dto, CancellationToken ct = default);
     Task<IReadOnlyList<ApplicationDto>> GetByPostingAsync(Guid jobPostingId, ApplicationStatus? status, CancellationToken ct = default);
     Task<IReadOnlyList<ApplicationDto>> GetByApplicantAsync(Guid applicantId, CancellationToken ct = default);
+    Task<ApplicationDto?> GetByIdAsync(Guid id, CancellationToken ct = default);
 }
