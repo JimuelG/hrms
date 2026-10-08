@@ -1,0 +1,64 @@
+<div class="max-w-3xl">
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">Onboarding checklist</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Tasks applied to every new onboarding case.</p>
+    </div>
+    <button (click)="openCreate()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3.5 py-2 rounded-md shrink-0">
+      <i class="fa-solid fa-plus text-xs"></i> New task
+    </button>
+  </div>
+
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800">
+    @for (t of templates(); track t.id) {
+      <div (click)="openEdit(t)" class="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40">
+        <div class="flex items-center gap-3 min-w-0">
+          <span class="text-xs font-mono text-slate-400 w-6 shrink-0">{{ t.sortOrder }}</span>
+          <div class="min-w-0">
+            <div class="text-sm font-medium truncate flex items-center gap-2">
+              {{ t.title }}
+              @if (t.isRequired) { <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400">Required</span> }
+              @if (!t.isActive) { <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 dark:bg-slate-800">Inactive</span> }
+            </div>
+            @if (t.description) { <div class="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">{{ t.description }}</div> }
+          </div>
+        </div>
+        <button (click)="remove(t); $event.stopPropagation()" class="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 shrink-0">
+          <i class="fa-solid fa-trash text-xs"></i>
+        </button>
+      </div>
+    } @empty {
+      <div class="px-4 py-10 text-center text-slate-400 text-sm">@if (loading()) { Loading… } @else { No checklist tasks yet. }</div>
+    }
+  </div>
+</div>
+
+@if (drawerOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="closeDrawer()"></div>
+  <aside class="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 z-50 flex flex-col">
+    <header class="flex items-center justify-between px-5 h-14 border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <h2 class="font-semibold text-sm">{{ editing() ? 'Edit task' : 'New task' }}</h2>
+      <button (click)="closeDrawer()" class="p-1.5 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="flex-1 overflow-y-auto p-5 space-y-4">
+      @if (formError()) { <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5"><i class="fa-solid fa-circle-exclamation text-xs"></i>{{ formError() }}</div> }
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Title</span>
+        <input [(ngModel)]="form.title" name="title" required class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+      </label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Description</span>
+        <textarea [(ngModel)]="form.description" name="description" rows="2" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none"></textarea>
+      </label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Sort order</span>
+        <input type="number" [(ngModel)]="form.sortOrder" name="sortOrder" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+      </label>
+      <label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" [(ngModel)]="form.isRequired" name="isRequired" /> Required</label>
+      @if (editing()) {
+        <label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" [(ngModel)]="form.isActive" name="isActive" /> Active</label>
+      }
+    </div>
+    <footer class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
+      <button type="button" (click)="closeDrawer()" class="px-3.5 py-2 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="save()" [disabled]="saving()" class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save task' }}</button>
+    </footer>
+  </aside>
+}

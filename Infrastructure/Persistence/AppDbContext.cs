@@ -44,6 +44,9 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<InterviewEvaluation> InterviewEvaluations => Set<InterviewEvaluation>();
     public DbSet<TimelineEvent> TimelineEvents => Set<TimelineEvent>();
     public DbSet<JobOffer> JobOffers => Set<JobOffer>();
+    public DbSet<OnboardingTaskTemplate> OnboardingTaskTemplates => Set<OnboardingTaskTemplate>();
+    public DbSet<OnboardingCase> OnboardingCases => Set<OnboardingCase>();
+    public DbSet<OnboardingTask> OnboardingTasks => Set<OnboardingTask>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

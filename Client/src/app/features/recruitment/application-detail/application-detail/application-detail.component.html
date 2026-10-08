@@ -10,8 +10,8 @@
     </div>
 
     <div class="flex gap-1 border-b border-slate-200 dark:border-slate-800 mb-6">
-      @for (t of [['overview','Overview'],['interviews','Interviews'],['offer','Offer']]; track t[0]) {
-        <button (click)="setTab(t[0] === 'overview' ? 'overview' : t[0] === 'interviews' ? 'interviews' : 'offer')"
+      @for (t of [['overview','Overview'],['interviews','Interviews'],['offer','Offer'],['onboarding','Onboarding']]; track t[0]) {
+        <button (click)="setTab(t[0] === 'overview' ? 'overview' : t[0] === 'interviews' ? 'interviews' : t[0] === 'offer' ? 'offer' : 'onboarding')"
           class="px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors"
           [class.border-indigo-600]="tab() === t[0]" [class.text-indigo-600]="tab() === t[0]" [class.dark:text-indigo-400]="tab() === t[0]"
           [class.border-transparent]="tab() !== t[0]" [class.text-slate-500]="tab() !== t[0]" [class.dark:text-slate-400]="tab() !== t[0]">
@@ -132,6 +132,52 @@
         }
       </div>
     }
+
+    @if (tab() === 'onboarding') {
+      @if (onboardingNotStarted()) {
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 text-center">
+          <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Onboarding hasn't started for this application yet.</p>
+          <button (click)="startOnboarding()" [disabled]="startingOnboarding()"
+            class="px-4 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-60">
+            {{ startingOnboarding() ? 'Starting…' : 'Start onboarding' }}
+          </button>
+        </div>
+      } @else if (onboardingCase(); as c) {
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400">
+            {{ onboardingStatusLabel[c.status] }}
+          </span>
+          @if (c.status === OnboardingCaseStatus.ReadyToConvert) {
+            <button (click)="openConvert()" class="px-3.5 py-2 rounded-md text-sm font-medium bg-emerald-600 hover:bg-emerald-700 text-white">
+              Convert to employee
+            </button>
+          }
+          @if (c.status === OnboardingCaseStatus.Completed) {
+            <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-check"></i> Employee created
+            </span>
+          }
+        </div>
+
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800">
+          @for (task of c.tasks; track task.id) {
+            <label class="flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40">
+              <input type="checkbox" [checked]="task.isCompleted" (change)="toggleTask(task)"
+                [disabled]="c.status === OnboardingCaseStatus.Completed"
+                class="mt-0.5 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500" />
+              <div class="min-w-0">
+                <div class="text-sm font-medium" [class.line-through]="task.isCompleted" [class.text-slate-400]="task.isCompleted">
+                  {{ task.title }}
+                  @if (task.isRequired) { <span class="text-[10px] font-semibold ml-1.5 px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-400">Required</span> }
+                </div>
+                @if (task.description) { <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ task.description }}</div> }
+              </div>
+            </label>
+          }
+        </div>
+      }
+    }
+
   }
 </div>
 
@@ -180,6 +226,43 @@
     <div class="flex justify-end gap-2 mt-4">
       <button (click)="offerFormOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
       <button (click)="submitOffer()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white">Create offer</button>
+    </div>
+  </div>
+}
+
+@if (convertOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="convertOpen.set(false)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5 max-h-[90vh] overflow-y-auto">
+    <h2 class="font-semibold text-sm mb-3">Convert to employee</h2>
+    @if (convertError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ convertError() }}</div> }
+    <div class="space-y-3">
+      <input [(ngModel)]="convertForm.employeeNumber" placeholder="Employee number" class="w-full font-mono border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+      <select [(ngModel)]="convertForm.branchId" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+        <option value="" disabled selected>Select branch</option>
+        @for (b of branches(); track b.id) { <option [value]="b.id">{{ b.name }}</option> }
+      </select>
+      <select [(ngModel)]="convertForm.departmentId" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+        <option value="" disabled selected>Select department</option>
+        @for (d of departments(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+      </select>
+      <select [(ngModel)]="convertForm.positionId" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+        <option value="" disabled selected>Select position</option>
+        @for (p of positions(); track p.id) { <option [value]="p.id">{{ p.title }}</option> }
+      </select>
+      <select [(ngModel)]="convertForm.managerId" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+        <option [ngValue]="null">No manager</option>
+        @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.firstName }} {{ e.lastName }}</option> }
+      </select>
+      <select [(ngModel)]="convertForm.employmentType" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+        @for (t of employeeTypeOptions; track t) { <option [ngValue]="t">{{ t }}</option> }
+      </select>
+      <input type="date" [(ngModel)]="convertForm.hireDate" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="convertOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="submitConvert()" [disabled]="converting()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-emerald-600 text-white disabled:opacity-60">
+        {{ converting() ? 'Converting…' : 'Create employee' }}
+      </button>
     </div>
   </div>
 }

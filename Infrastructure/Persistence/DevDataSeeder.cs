@@ -117,6 +117,29 @@ public static class DevDataSeeder
             }
         }
 
+        async Task EnsureOnboardingTemplates(Tenant t)
+        {
+            tenantInit.SetTenant(t.Id);
+            var hasAny = await db.OnboardingTaskTemplates.AnyAsync(x => x.TenantId == t.Id);
+            if (hasAny) return;
+
+            db.OnboardingTaskTemplates.AddRange(
+                new OnboardingTaskTemplate { Title = "Verify government ID", Description = "Confirm a valid government-issued ID is on file.", IsRequired = true, SortOrder = 1 },
+                new OnboardingTaskTemplate { Title = "Collect signed employement contract", Description = "Signed copy uploaded to employee documents.", IsRequired = true, SortOrder = 2 },
+                new OnboardingTaskTemplate { Title = "Collect tax/government forms", Description = "Statutory forms required for payroll setup.", IsRequired = true, SortOrder = 3 },
+                new OnboardingTaskTemplate { Title = "Set up IT accounts", Description = "Email, system access, and hardware provisioning.", IsRequired = true, SortOrder = 4 },
+                new OnboardingTaskTemplate { Title = "Assign workstation / equipment", Description = null, IsRequired = false, SortOrder = 5 },
+                new OnboardingTaskTemplate { Title = "Schedule orientation session", Description = "Company policies, culture, and expectations walkthrough", IsRequired = true, SortOrder = 6 },
+                new OnboardingTaskTemplate { Title = "Introduce tp team and manager", Description = null, IsRequired = false, SortOrder = 7 },
+                new OnboardingTaskTemplate { Title = "Enroll in benefits (if eligible)", Description = "HMO and other benefit enrollment, subject to eligibility rules.", IsRequired = false, SortOrder = 8 }
+            );
+
+            await db.SaveChangesAsync();
+        }
+
+        await EnsureOnboardingTemplates(acme);
+        await EnsureOnboardingTemplates(globex);
+
         await EnsureSubscription(acme, professional);
         await EnsureSubscription(globex, starter);
 
@@ -148,7 +171,9 @@ public static class DevDataSeeder
            Permissions.Interviews.Read,
            Permissions.Interviews.Write,
            Permissions.JobOffers.Read,
-           Permissions.JobOffers.Write
+           Permissions.JobOffers.Write,
+           Permissions.Onboarding.Read,
+           Permissions.Onboarding.Write,
         ], assignTo:acmeAdmin);
 
         var multiUser = await users.FindByEmailAsync("multi@hrms.test")

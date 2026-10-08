@@ -1,6 +1,7 @@
 using Application.Features.Branches;
 using Application.Features.Departments;
 using Application.Features.Employees;
+using Application.Features.Onboarding;
 using Application.Features.Positions;
 using Application.Features.Recruitment;
 using Core.Interfaces;
@@ -23,6 +24,8 @@ public static class DependencyInjection
         services.AddScoped<IApplicationService, ApplicationService>();
         services.AddScoped<IInterviewService, InterviewService>();
         services.AddScoped<IJobOfferService, JobOfferService>();
+        services.AddScoped<IOnboardingService, OnboardingService>();
+        services.AddScoped<IOnboardingTaskTemplateService, OnboardingTaskTemplateService>();
 
         return services;
     }
