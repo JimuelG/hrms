@@ -14,6 +14,7 @@ public sealed class EmployeeService(
     IGenericRepository<Branch> branches,
     IGenericRepository<Department> departments,
     IGenericRepository<Position> positions,
+    IGenericRepository<WorkSchedule> schedules,
     IFeatureGate featureGate,
     ITimelineService timeline) : IEmployeeService
 {
@@ -34,7 +35,7 @@ public sealed class EmployeeService(
         if (await employees.CountAsync(new EmployeeByEmailSpecification(dto.Email), ct) > 0)
             return ServiceResult<EmployeeDto>.Fail($"Email '{dto.Email}' is already in use.", ServiceErrorType.Conflict);
 
-        var fkError = await ValidateFofeignKeysAsync(dto.BranchId, dto.DepartmentId, dto.PositionId, dto.ManagerId, selfId: null, ct);
+        var fkError = await ValidateFofeignKeysAsync(dto.BranchId, dto.DepartmentId, dto.PositionId, dto.ManagerId, scheduleId:null, selfId: null, ct);
         if (fkError is not null) return ServiceResult<EmployeeDto>.Fail(fkError);
 
         var employee = new Employee
@@ -93,10 +94,13 @@ public sealed class EmployeeService(
         var employee = await employees.GetByIdAsync(id, ct);
         if (employee is null) return ServiceResult<EmployeeDto>.Fail("Employee not found.", ServiceErrorType.NotFound);
 
+        if (await employees.CountAsync(new EmployeeByEmailSpecification(dto.Email, exludeId: id), ct) > 0)
+            return ServiceResult<EmployeeDto>.Fail($"Email '{dto.Email}' is already in use.", ServiceErrorType.Conflict);
+
         if (dto.ManagerId == id)
             return ServiceResult<EmployeeDto>.Fail("An employee cannot be their own manager.");
 
-        var fkError = await ValidateFofeignKeysAsync(dto.BranchId, dto.DepartmentId, dto.PositionId, dto.ManagerId, selfId: id, ct);
+        var fkError = await ValidateFofeignKeysAsync(dto.BranchId, dto.DepartmentId, dto.PositionId, dto.ManagerId, dto.ScheduleId, selfId: id, ct);
         if (fkError is not null) return ServiceResult<EmployeeDto>.Fail(fkError);
 
         var oldStatus = employee.Status;
@@ -116,10 +120,11 @@ public sealed class EmployeeService(
         employee.ManagerId = dto.ManagerId;
         employee.EmploymentType = (EmploymentType)dto.EmploymentType;
         employee.HireDate = dto.HireDate;
+        employee.ScheduleId = dto.ScheduleId;
         employee.Status = (EmployeeStatus)dto.Status;
         
         if (oldStatus != (EmployeeStatus)dto.Status)
-            timeline.Record(TimelineSubjectType.Employee, employee.Id, TimeLineEventType.Hired, $"Status changed to {((EmployeeStatus)dto.Status).ToDisplayName()}", $"Previously {oldStatus}");
+            timeline.Record(TimelineSubjectType.Employee, employee.Id, TimeLineEventType.StatusChanged, $"Status changed to {((EmployeeStatus)dto.Status).ToDisplayName()}", $"Previously {oldStatus.ToDisplayName()}");
         if (oldBranchId != dto.BranchId)
             timeline.Record(TimelineSubjectType.Employee, employee.Id, TimeLineEventType.BranchChanged, "Branch changed");
         if (oldDepartmentId != dto.DepartmentId)
@@ -144,12 +149,15 @@ public sealed class EmployeeService(
         Guid departmentId,
         Guid positionId,
         Guid? managerId,
+        Guid? scheduleId,
         Guid? selfId,
         CancellationToken ct)
     {
         if (await branches.GetByIdAsync(branchId, ct) is null) return "Selected branch was not found.";
         if (await departments.GetByIdAsync(departmentId, ct) is null) return "Selected department was not found";
         if (await positions.GetByIdAsync(positionId, ct) is null) return "Selected position was not found";
+        if (scheduleId is Guid sid && await schedules.GetByIdAsync(sid, ct) is null)
+            return "Selected work schedule was not found.";
 
         if (managerId is Guid mid)
         {
@@ -179,5 +187,7 @@ public sealed class EmployeeService(
         (int)e.EmploymentType,
         e.HireDate,
         (int)e.Status,
+        e.ScheduleId,
+        e.Schedule?.Name,
         e.CreatedAtUtc);
 }

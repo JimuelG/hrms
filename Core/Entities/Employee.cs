@@ -25,6 +25,9 @@ public class Employee : SoftDeletableEntity, ITenantEntity, IAuditable
     public Employee? Manager { get; set; }
     public ICollection<Employee> DirectReports { get; set; } = new List<Employee>();
 
+    public Guid? ScheduleId { get; set; }
+    public WorkSchedule? Schedule { get; set; }
+
     public EmploymentType EmploymentType { get; set; }
     public DateOnly HireDate { get; set; }
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Probationary;

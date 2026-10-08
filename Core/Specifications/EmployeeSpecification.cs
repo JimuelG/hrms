@@ -16,6 +16,7 @@ public sealed class EmployeeSearchSpecification : BaseSpecfication<Employee>
         AddInclude(e => e.Department);
         AddInclude(e => e.Position);
         AddInclude(e => e.Manager!);
+        AddInclude(e => e.Schedule!);
     }
 }
 
@@ -27,6 +28,7 @@ public sealed class EmployeeWithRelationsByIdSpecification : BaseSpecfication<Em
         AddInclude(e => e.Department);
         AddInclude(e => e.Position);
         AddInclude(e => e.Manager!);
+        AddInclude(e => e.Schedule!);
     }
 }
 

@@ -46,7 +46,7 @@ export interface OnboardingCase {
     status: OnboardingCaseStatus;
     startedAtUtc: string;
     completedAtUtc: string | null;
-    createdEmployeedId: string | null;
+    createdEmployeeId: string | null;
     tasks: OnboardingTask[];
 }
 

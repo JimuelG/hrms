@@ -3,12 +3,11 @@ import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApplicationService } from '../../../../core/services/application.service';
-import { ApplicantService } from '../../../../core/services/applicant.service';
 import { InterviewService } from '../../../../core/services/interview.service';
 import { JobOfferService } from '../../../../core/services/job-offer.service';
 import { EmployeeService } from '../../../../core/services/employee.service';
 import { APPLICATION_STATUS_LABELS, ApplicationItem, Interview, INTERVIEW_TYPE_LABELS, InterviewRecommendation, InterviewStatus, InterviewType, JobOffer, JobOfferStatus, OFFER_STATUS_LABELS, RECOMMENDATION_LABELS, ScheduleInterviewValue } from '../../../../shared/models/recruitment';
-import { Employee, EmploymentType } from '../../../../shared/models/employee';
+import { Employee, EMPLOYMENT_TYPE_LABELS, EmploymentType } from '../../../../shared/models/employee';
 import { extractApiError } from '../../../../shared/utils/api-error.util';
 import { OnboardingService } from '../../../../core/services/onboarding.service';
 import { BranchService } from '../../../../core/services/branch.service';
@@ -33,7 +32,6 @@ type Tab = 'overview' | 'interviews' | 'offer' | 'onboarding';
 export class ApplicationDetailComponent implements OnInit{
   private route = inject(ActivatedRoute);
   private applicationService = inject(ApplicationService);
-  private applicantService = inject(ApplicantService);
   private interviewService = inject(InterviewService);
   private offerService = inject(JobOfferService);
   private employeeService = inject(EmployeeService);
@@ -56,6 +54,7 @@ export class ApplicationDetailComponent implements OnInit{
   recommendationLabel = RECOMMENDATION_LABELS;
   offerStatusLabel = OFFER_STATUS_LABELS;
   applicationStatusLabel = APPLICATION_STATUS_LABELS;
+  employmentTypeLabel = EMPLOYMENT_TYPE_LABELS;
   InterviewStatus = InterviewStatus;
   JobOfferStatus = JobOfferStatus;
 
@@ -71,7 +70,8 @@ export class ApplicationDetailComponent implements OnInit{
   branches = signal<Branch[]>([]);
   departments = signal<Department[]>([]);
   positions = signal<Position[]>([]);
-  employeeTypeOptions = Object.values(EmploymentType).filter((v): v is EmploymentType => typeof v === 'number');
+
+  employmentTypeOptions = Object.values(EmploymentType).filter((v): v is EmploymentType => typeof v === 'number');
 
   convertOpen = signal(false);
   convertError = signal<string | null>(null);
@@ -199,7 +199,7 @@ export class ApplicationDetailComponent implements OnInit{
     this.offerForm = {
       proposedSalary: 0,
       currency: 'PHP',
-      proposedStartDate: '0',
+      proposedStartDate: '',
       expiresOn: '',
       terms: ''
     };

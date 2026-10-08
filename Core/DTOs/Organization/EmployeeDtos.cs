@@ -21,6 +21,8 @@ public sealed record EmployeeDto(
     int EmploymentType,
     DateOnly HireDate,
     int Status,
+    Guid? ScheduleId,
+    string? ScheduleName,
     DateTime CreatedAtUtc);
 
 public sealed class CreateEmployeeDto
@@ -77,6 +79,7 @@ public sealed class UpdateEmployeeDto
     public int EmploymentType { get; init; }
     [Required]
     public DateOnly HireDate { get; init; }
+    public Guid? ScheduleId { get; init; }
     [Required]
     public int Status { get; init; }
 }

@@ -10,6 +10,8 @@ import { Employee, EMPLOYEE_STATUS_LABELS, EmployeeFormValue, EmployeeStatus, Em
 import { Branch, Department, Position } from '../../../../shared/models/organization';
 import { extractApiError } from '../../../../shared/utils/api-error.util';
 import { forkJoin, last } from 'rxjs';
+import { WorkScheduleService } from '../../../../core/services/work-schedule.service';
+import { WorkSchedule } from '../../../../shared/models/attendance';
 
 @Component({
   selector: 'app-employee-list',
@@ -26,12 +28,14 @@ export class EmployeeListComponent implements OnInit {
   private branchService = inject(BranchService);
   private departmentService = inject(DepartmentService);
   private positionService = inject(PositionService);
+  private scheduleService = inject(WorkScheduleService);
   private router = inject(Router);
 
   employees = signal<Employee[]>([]);
   branches = signal<Branch[]>([]);
   departments = signal<Department[]>([]);
   positions = signal<Position[]>([]);
+  schedules = signal<WorkSchedule[]>([]);
   eligibleManagers = signal<EmployeeSummary[]>([]);
 
   loading = signal(true);
@@ -59,11 +63,13 @@ export class EmployeeListComponent implements OnInit {
       branches: this.branchService.getAll(),
       departments: this.departmentService.getAll(),
       positions: this.positionService.getAll(),
+      schedules: this.scheduleService.getAll(),
       eligibleManagers: this.employeeService.getEligibleManagers()
-    }).subscribe(({ branches, departments, positions, eligibleManagers }) => {
+    }).subscribe(({ branches, departments, positions, schedules, eligibleManagers }) => {
       this.branches.set(branches);
       this.departments.set(departments);
       this.positions.set(positions);
+      this.schedules.set(schedules);
       this.eligibleManagers.set(eligibleManagers);
     });
     this.load();
@@ -106,6 +112,7 @@ export class EmployeeListComponent implements OnInit {
       departmentId: e.departmentId,
       positionId: e.positionId,
       managerId: e.managerId,
+      scheduleId: e.scheduleId,
       employmentType: e.employmentType,
       hireDate: e.hireDate,
       status: e.status

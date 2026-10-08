@@ -52,6 +52,8 @@ export interface Employee {
     positionTitle: string;
     managerId: string | null;
     managerName: string | null;
+    scheduleId: string | null;
+    scheduleName: string | null;
     employmentType: EmploymentType;
     hireDate: string;
     status: EmployeeStatus;
@@ -69,6 +71,7 @@ export interface EmployeeFormValue {
     departmentId: string;
     positionId: string;
     managerId?: string | null;
+    scheduleId?: string | null;
     employmentType: EmploymentType;
     hireDate: string;
     status: EmployeeStatus;

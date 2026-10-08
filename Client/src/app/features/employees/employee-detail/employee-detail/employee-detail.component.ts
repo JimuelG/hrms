@@ -8,6 +8,8 @@ import { EmployeeDocumentService } from '../../../../core/services/employee-docu
 import { TimelineService } from '../../../../core/services/timeline.service';
 import { DocumentStatus, EmergencyContact, EmergencyContactFormValue, Employee, EMPLOYEE_STATUS_LABELS, EmployeeDocument, EMPLOYMENT_TYPE_LABELS, TIMELINE_ICONS, TimelineEvent } from '../../../../shared/models/employee';
 import { extractApiError } from '../../../../shared/utils/api-error.util';
+import { WorkScheduleService } from '../../../../core/services/work-schedule.service';
+import { WorkSchedule } from '../../../../shared/models/attendance';
 
 type Tab = 'profile' | 'contacts' | 'documents' | 'timeline';
 
@@ -29,6 +31,7 @@ export class EmployeeDetailComponent implements OnInit {
   private contactService = inject(ContactService);
   private documentService = inject(EmployeeDocumentService);
   private timelineService = inject(TimelineService);
+  private scheduleService = inject(WorkScheduleService);
 
   employeeId = this.route.snapshot.paramMap.get('id')!;
   employee = signal<Employee | null>(null);
@@ -57,6 +60,10 @@ export class EmployeeDetailComponent implements OnInit {
   selectedFile: File | null = null;
   uploading = signal(false);
   uploadError = signal<string | null>(null);
+  schedules = signal<WorkSchedule[]>([]);
+  scheduleSelection: string | null = null;
+  scheduleSaving = signal(false);
+  scheduleError = signal<string | null>(null);
 
   timeline = signal<TimelineEvent[]>([]);
   noteTitle = '';
@@ -66,10 +73,12 @@ export class EmployeeDetailComponent implements OnInit {
   ngOnInit(): void {
     this.employeeService.getById(this.employeeId).subscribe((e) => {
       this.employee.set(e);
-      this.loadContacts();
-      this.loadDocuments();
-      this.loadTimeline();
-    })
+      this.scheduleSelection = e.scheduleId;
+    });
+    this.scheduleService.getAll().subscribe((s) => this.schedules.set(s.filter((x) => x.isActive)));
+    this.loadContacts();
+    this.loadDocuments();
+    this.loadTimeline();
   }
 
   setTab(t: Tab): void {
@@ -198,6 +207,40 @@ export class EmployeeDetailComponent implements OnInit {
       },
       error: () => {
         this.addingNote.set(false);
+      }
+    })
+  }
+
+  saveSchedule(): void {
+    const e = this.employee();
+    if (!e) return;
+
+    this.scheduleError.set(null);
+    this.scheduleSaving.set(true);
+
+    this.employeeService.update(e.id, {
+      firstName: e.firstName,
+      lastName: e.lastName,
+      email: e.email,
+      phone: e.phone ?? undefined,
+      dateOfBirth: e.dateOfBirth,
+      branchId: e.branchId,
+      departmentId: e.departmentId,
+      positionId: e.positionId,
+      managerId: e.managerId,
+      employmentType: e.employmentType,
+      hireDate: e.hireDate,
+      status: e.status,
+      scheduleId: this.scheduleSelection
+    }).subscribe({
+      next: (updated) => {
+        this.employee.set(updated);
+        this.scheduleSelection = updated.scheduleId;
+        this.scheduleSaving.set(false);
+      },
+      error: (err) => {
+        this.scheduleSaving.set(false);
+        this.scheduleError.set(extractApiError(err));
       }
     })
   }

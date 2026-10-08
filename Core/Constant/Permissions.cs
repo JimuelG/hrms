@@ -75,6 +75,13 @@ public static class Permissions
         public const string Write = "onboarding.write";
     }
 
+    public static class WorkSchedules
+    {
+        public const string Read = "workschedules.read";
+        public const string Write = "workschedules.write";
+        public const string Delete = "workschedules.delete";
+    }
+
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
         (Employees.Read, "Employees", "View employee records"),
@@ -105,5 +112,8 @@ public static class Permissions
         (JobOffers.Write, "JobOffers", "Create and edit job offers"),
         (Onboarding.Read, "Onboarding", "View onboarding"),
         (Onboarding.Write, "Onboarding", "Create and edit onboarding"),
+        (WorkSchedules.Read, "WorkSchedules", "View work schedules"),
+        (WorkSchedules.Write, "WorkSchedules", "Create and edit work schedules"),
+        (WorkSchedules.Delete, "WorkSchedules", "Delete work schedules"),
     ];
 }

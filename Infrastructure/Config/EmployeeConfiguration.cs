@@ -23,5 +23,6 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
 
         builder.HasOne(e => e.Manager).WithMany(e => e.DirectReports)
             .HasForeignKey(e => e.ManagerId).IsRequired(false).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne(e => e.Schedule).WithMany().HasForeignKey(e => e.ScheduleId).IsRequired(false).OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -152,10 +152,11 @@
               Convert to employee
             </button>
           }
-          @if (c.status === OnboardingCaseStatus.Completed) {
-            <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-circle-check"></i> Employee created
-            </span>
+          @if (c.status === OnboardingCaseStatus.Completed && c.createdEmployeeId) {
+            <a [routerLink]="['/employees', c.createdEmployeeId]"
+              class="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1.5">
+              <i class="fa-solid fa-circle-check"></i> Employee created. Open profile to assign a schedule
+            </a>
           }
         </div>
 
@@ -254,7 +255,7 @@
         @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.firstName }} {{ e.lastName }}</option> }
       </select>
       <select [(ngModel)]="convertForm.employmentType" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
-        @for (t of employeeTypeOptions; track t) { <option [ngValue]="t">{{ t }}</option> }
+        @for (t of employmentTypeOptions; track t) { <option [ngValue]="t">{{ employmentTypeLabel[t] }}</option> }
       </select>
       <input type="date" [(ngModel)]="convertForm.hireDate" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
     </div>

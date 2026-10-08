@@ -134,6 +134,16 @@
             @if (!editing() || m.id !== editing()!.id) {
               <option [value]="m.id">{{ m.fullName }} — {{ m.positionTitle }}</option>
             }
+            @if (editing()) {
+              <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Work schedule</span>
+                <select [(ngModel)]="form.scheduleId" name="scheduleId" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500">
+                  <option [ngValue]="null">No schedule</option>
+                  @for (s of schedules(); track s.id) {
+                    <option [ngValue]="s.id">{{ s.name }} ({{ s.startTime.slice(0,5) }}–{{ s.endTime.slice(0,5) }})</option>
+                  }
+                </select>
+              </label>
+            }
           }
         </select>
       </label>

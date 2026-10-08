@@ -47,6 +47,8 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<OnboardingTaskTemplate> OnboardingTaskTemplates => Set<OnboardingTaskTemplate>();
     public DbSet<OnboardingCase> OnboardingCases => Set<OnboardingCase>();
     public DbSet<OnboardingTask> OnboardingTasks => Set<OnboardingTask>();
+    public DbSet<WorkSchedule> WorkSchedules => Set<WorkSchedule>();
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

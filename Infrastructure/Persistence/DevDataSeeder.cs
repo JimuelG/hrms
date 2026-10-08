@@ -174,6 +174,9 @@ public static class DevDataSeeder
            Permissions.JobOffers.Write,
            Permissions.Onboarding.Read,
            Permissions.Onboarding.Write,
+           Permissions.WorkSchedules.Read,
+           Permissions.WorkSchedules.Write,
+           Permissions.WorkSchedules.Delete,
         ], assignTo:acmeAdmin);
 
         var multiUser = await users.FindByEmailAsync("multi@hrms.test")

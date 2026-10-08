@@ -40,7 +40,22 @@
           <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Employment type</dt><dd>{{ employmentTypeLabel[e.employmentType] }}</dd></div>
           <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Hire date</dt><dd>{{ e.hireDate }}</dd></div>
         </dl>
-        <p class="text-xs text-slate-400 mt-5">To edit this profile, use the pencil icon from the employee list.</p>
+        <div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+            <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Work schedule</div>
+            <div class="flex items-center gap-2">
+              <select [(ngModel)]="scheduleSelection" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 min-w-[220px]">
+                <option [ngValue]="null">No schedule</option>
+                @for (s of schedules(); track s.id) {
+                  <option [ngValue]="s.id">{{ s.name }} ({{ s.startTime.slice(0,5) }}–{{ s.endTime.slice(0,5) }})</option>
+                }
+              </select>
+              <button (click)="saveSchedule()" [disabled]="scheduleSaving() || scheduleSelection === e.scheduleId"
+                class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-50">
+                {{ scheduleSaving() ? 'Saving…' : 'Save' }}
+              </button>
+            </div>
+            @if (scheduleError()) { <div class="text-red-600 dark:text-red-400 text-sm mt-2">{{ scheduleError() }}</div> }
+          </div>
       </div>
     }
 

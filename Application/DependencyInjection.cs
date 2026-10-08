@@ -1,3 +1,4 @@
+using Application.Features.Attendance;
 using Application.Features.Branches;
 using Application.Features.Departments;
 using Application.Features.Employees;
@@ -26,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IJobOfferService, JobOfferService>();
         services.AddScoped<IOnboardingService, OnboardingService>();
         services.AddScoped<IOnboardingTaskTemplateService, OnboardingTaskTemplateService>();
+        services.AddScoped<IWorkScheduleService, WorkScheduleService>();
 
         return services;
     }
