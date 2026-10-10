@@ -1,6 +1,7 @@
 using API.Authorization;
 using API.Extensions;
 using Core.Constant;
+using Core.DTOs.Attendance;
 using Core.DTOs.Employees;
 using Core.DTOs.Organization;
 using Core.Enums;
@@ -151,4 +152,28 @@ public class EmployeesController(IEmployeeService service)
     public async Task<IActionResult> GetEligibleManagers(
         [FromQuery] Guid? excludeEmployeeId, CancellationToken ct) =>
         Ok(await service.GetEligibleManagersAsync(excludeEmployeeId, ct));
+
+    [HasPermission(Permissions.Employees.Read)]
+    [HttpGet("{employeeId:guid}/work-locations")]
+    public async Task<IActionResult> GetWorkLocations(
+        Guid employeeId, [FromServices] IEmployeeWorkLocationService svc, CancellationToken ct) =>
+        Ok(await svc.GetForEmployeeAsync(employeeId, ct));
+
+    [HasPermission(Permissions.Employees.Write)]
+    [HttpPut("{employeeId:guid}/work-locations")]
+    public async Task<IActionResult> SetWorkLocations(
+        Guid employeeId, SetEmployeeWorkLocationsDto dto, [FromServices] IEmployeeWorkLocationService svc, CancellationToken ct) =>
+        (await svc.SetForEmployeeAsync(employeeId, dto.WorkLocationIds!, ct)).ToActionResult(this);
+    
+    [HasPermission(Permissions.Employees.LinkUser)]        
+    [HttpPut("{employeeId:guid}/user-link")]
+    public async Task<IActionResult> LinkUser(
+        Guid employeeId, LinkUserDto dto, [FromServices] IEmployeeUserLinkService svc, CancellationToken ct) =>
+        (await svc.LinkAsync(employeeId, dto.Email, ct)).ToActionResult(this);
+
+    [HasPermission(Permissions.Employees.LinkUser)]
+    [HttpDelete("{employeeId:guid}/user-link")]
+    public async Task<IActionResult> UnlinkUser(
+        Guid employeeId, [FromServices] IEmployeeUserLinkService svc, CancellationToken ct) =>
+        (await svc.UnLinkAsync(employeeId, ct)).ToActionResult(this);
 }

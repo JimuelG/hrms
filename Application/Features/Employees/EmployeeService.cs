@@ -189,5 +189,6 @@ public sealed class EmployeeService(
         (int)e.Status,
         e.ScheduleId,
         e.Schedule?.Name,
-        e.CreatedAtUtc);
+        e.CreatedAtUtc,
+        e.UserId is not null);
 }

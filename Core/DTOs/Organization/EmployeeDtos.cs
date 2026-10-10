@@ -23,7 +23,8 @@ public sealed record EmployeeDto(
     int Status,
     Guid? ScheduleId,
     string? ScheduleName,
-    DateTime CreatedAtUtc);
+    DateTime CreatedAtUtc,
+    bool HasLinkedAccount);
 
 public sealed class CreateEmployeeDto
 {
@@ -107,4 +108,10 @@ public sealed class UpsertEmergencyContactDto
     [MaxLength(300)]
     public string? Address { get; init; }
     public bool IsPrimary { get; init; }
+}
+
+public sealed class LinkUserDto
+{
+    [Required, EmailAddress, MaxLength(256)]
+    public string Email { get; init; } = "";
 }

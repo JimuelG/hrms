@@ -1,11 +1,10 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
 
 namespace Tests;
 
-public class HttpTenantIsolationTests(WebApplicationFactory<Program> factory) : IClassFixture<WebApplicationFactory<Program>>
+public class HttpTenantIsolationTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
     private async Task<string> LoginAsync(HttpClient client, string email, string password, string? tenantSlug = null)
     {
@@ -30,7 +29,6 @@ public class HttpTenantIsolationTests(WebApplicationFactory<Program> factory) : 
         var acmeToken = await LoginAsync(acmeClient, "admin@acme.test", "Password123!");
         Authorize(acmeClient, acmeToken);
 
-        // Create a real Branch inside Acme, the exact "known, real ID" an attacker would have.
         var createResp = await acmeClient.PostAsJsonAsync("/api/v1/branches", new
         {
             name = "Isolation Test Branch",
@@ -40,7 +38,6 @@ public class HttpTenantIsolationTests(WebApplicationFactory<Program> factory) : 
         var created = await createResp.Content.ReadFromJsonAsync<BranchDto>();
         Assert.NotNull(created);
 
-        // Authenticate as a DIFFERENT tenant (Globex), then attempt to read Acme's branch.
         using var globexClient = factory.CreateClient();
         var globexToken = await LoginAsync(globexClient, "multi@hrms.test", "Password123!", tenantSlug: "globex");
         Authorize(globexClient, globexToken);

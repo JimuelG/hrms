@@ -39,6 +39,9 @@ public static class DependencyInjecttion
 
         services.AddScoped<ICurrentUserService, CurrentUserService>();
         services.AddScoped<AuditSaveChangesInterceptor>();
+
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<IUserDirectory, UserDirectory>();
         
         services.AddOptions<JwtOptions>()
             .Bind(config.GetSection(JwtOptions.Section))

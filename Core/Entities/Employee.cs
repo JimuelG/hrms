@@ -5,6 +5,7 @@ namespace Core.Entities;
 public class Employee : SoftDeletableEntity, ITenantEntity, IAuditable
 {
     public Guid TenantId { get; set; }
+    public Guid? UserId { get; set; }
     public string EmployeeNumber { get; set; } = default!;
     public string FirstName { get; set; } = default!;
     public string LastName { get; set; } = default!;

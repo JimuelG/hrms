@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Core.Common;
 
 namespace Core.DTOs.Organization;
 public sealed record BranchDto
@@ -27,6 +28,7 @@ public sealed class CreateBranchDto
     [MaxLength(100)]
     public string? Country { get; init; }
     [MaxLength(100)]
+    [TimeZoneId]
     public string? TimeZoneId { get; init; }
 }
 
@@ -43,6 +45,7 @@ public sealed class UpdateBranchDto
     [MaxLength(100)]
     public string? Country { get; init; }
     [MaxLength(100)]
+    [TimeZoneId]
     public string? TimeZoneId { get; init; }
     public bool IsActive { get; init; } = true;
 }

@@ -68,3 +68,8 @@ public sealed class EligibleManagersSpecification : BaseSpecfication<Employee>
         AddOrderBy(e => e.LastName);
     }
 }
+
+public sealed class EmployeeByUserIdSpecification : BaseSpecfication<Employee>
+{
+    public EmployeeByUserIdSpecification(Guid userId) : base(e => e.UserId == userId) {}
+}

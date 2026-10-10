@@ -58,6 +58,7 @@ export interface Employee {
     hireDate: string;
     status: EmployeeStatus;
     createdAtUtc: string;
+    hasLinkedAccount: boolean;
 }
 
 export interface EmployeeFormValue {
@@ -125,6 +126,7 @@ export enum TimelineEventType {
     DocumentUpload = 7,
     DocumentVerified = 8,
     DocumentRejected = 9,
+    WorkLocationChanged = 10,
     Note = 99
 }
 
@@ -138,6 +140,7 @@ export const TIMELINE_ICONS: Record<TimelineEventType, string> = {
     [TimelineEventType.DocumentUpload]: 'fa-file-arrow-up',
     [TimelineEventType.DocumentVerified]: 'fa-file-circle-check',
     [TimelineEventType.DocumentRejected]: 'fa-file-circle-xmark',
+    [TimelineEventType.WorkLocationChanged]: 'fa-location-dot',
     [TimelineEventType.Note]: 'fa-note-sticky'
 }
 

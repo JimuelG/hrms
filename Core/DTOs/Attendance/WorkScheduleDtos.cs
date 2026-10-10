@@ -7,7 +7,7 @@ public sealed record WorkScheduleDto(
     string Name,
     TimeOnly StartTime,
     TimeOnly EndTime,
-    WorkingDay WorkingDays,
+    int WorkingDays,
     bool IsActive,
     DateTime CreatedAtUtc);
 

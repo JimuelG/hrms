@@ -4,6 +4,7 @@ using Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261009020222_AddWorkLocations")]
+    partial class AddWorkLocations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -143,96 +146,6 @@ namespace Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Applications");
-                });
-
-            modelBuilder.Entity("Core.Entities.AttendanceRecord", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<double?>("ClockInAccuracyMeters")
-                        .HasColumnType("float");
-
-                    b.Property<double?>("ClockInDistanceMeters")
-                        .HasColumnType("float");
-
-                    b.Property<double?>("ClockInLatitude")
-                        .HasColumnType("float");
-
-                    b.Property<string>("ClockInLocationName")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<double?>("ClockInLongitude")
-                        .HasColumnType("float");
-
-                    b.Property<DateTime>("ClockInUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ClockInWorkLocationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<double?>("ClockOutAccuracyMeters")
-                        .HasColumnType("float");
-
-                    b.Property<double?>("ClockOutDistanceMeters")
-                        .HasColumnType("float");
-
-                    b.Property<double?>("ClockOutLatitude")
-                        .HasColumnType("float");
-
-                    b.Property<string>("ClockOutLocationName")
-                        .HasMaxLength(150)
-                        .HasColumnType("nvarchar(150)");
-
-                    b.Property<double?>("ClockOutLongitude")
-                        .HasColumnType("float");
-
-                    b.Property<DateTime?>("ClockOutUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid?>("ClockOutWorkLocationId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateOnly>("Date")
-                        .HasColumnType("date");
-
-                    b.Property<Guid>("EmployeeId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("Flags")
-                        .HasColumnType("int");
-
-                    b.Property<TimeOnly?>("ScheduleEnd")
-                        .HasColumnType("time");
-
-                    b.Property<TimeOnly?>("ScheduledStart")
-                        .HasColumnType("time");
-
-                    b.Property<Guid>("TenantId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedAtUtc")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ClockInWorkLocationId");
-
-                    b.HasIndex("ClockOutWorkLocationId");
-
-                    b.HasIndex("Date");
-
-                    b.HasIndex("TenantId");
-
-                    b.HasIndex("EmployeeId", "Date")
-                        .IsUnique();
-
-                    b.ToTable("AttendanceRecords");
                 });
 
             modelBuilder.Entity("Core.Entities.AuditLog", b =>
@@ -472,9 +385,6 @@ namespace Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("BranchId");
@@ -496,10 +406,6 @@ namespace Infrastructure.Migrations
                     b.HasIndex("TenantId", "EmployeeNumber")
                         .IsUnique()
                         .HasFilter("[IsDeleted] = 0");
-
-                    b.HasIndex("TenantId", "UserId")
-                        .IsUnique()
-                        .HasFilter("[UserId] IS NOT NULL AND [IsDeleted] = 0");
 
                     b.ToTable("Employees");
                 });
@@ -1851,27 +1757,6 @@ namespace Infrastructure.Migrations
                     b.Navigation("Applicant");
 
                     b.Navigation("JobPosting");
-                });
-
-            modelBuilder.Entity("Core.Entities.AttendanceRecord", b =>
-                {
-                    b.HasOne("Core.Entities.WorkLocation", null)
-                        .WithMany()
-                        .HasForeignKey("ClockInWorkLocationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Core.Entities.WorkLocation", null)
-                        .WithMany()
-                        .HasForeignKey("ClockOutWorkLocationId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Core.Entities.Employee", "Employee")
-                        .WithMany()
-                        .HasForeignKey("EmployeeId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("Core.Entities.Employee", b =>

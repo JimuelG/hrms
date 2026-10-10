@@ -48,6 +48,9 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<OnboardingCase> OnboardingCases => Set<OnboardingCase>();
     public DbSet<OnboardingTask> OnboardingTasks => Set<OnboardingTask>();
     public DbSet<WorkSchedule> WorkSchedules => Set<WorkSchedule>();
+    public DbSet<WorkLocation> WorkLocations => Set<WorkLocation>();
+    public DbSet<EmployeeWorkLocation> EmployeeWorkLocations => Set<EmployeeWorkLocation>();
+    public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,6 +58,13 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(TenantConfiguration).Assembly);
 
         ApplyGlobalFilters(modelBuilder);
+    }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        base.ConfigureConventions(configurationBuilder);
+        configurationBuilder.Properties<DateTime>().HaveConversion<UtcDateTimeConverter>();
+        configurationBuilder.Properties<DateTime?>().HaveConversion<NullableUtcDateTimeConverter>();
     }
 
     private static readonly MethodInfo SetTenantFilterMethod =

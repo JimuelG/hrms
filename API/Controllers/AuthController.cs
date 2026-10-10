@@ -9,8 +9,7 @@ namespace API.Controllers;
 
 public class AuthController(
     IAuthService auth,
-    ITenantContext tenant,
-    IOptions<JwtOptions> jwt) : BaseApiController
+    ITenantContext tenant) : BaseApiController
 {
     private const string RefreshCookie = "hrms_refresh";
     private string? Ip => HttpContext.Connection.RemoteIpAddress?.ToString();

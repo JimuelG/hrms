@@ -137,6 +137,26 @@ public static class DevDataSeeder
             await db.SaveChangesAsync();
         }
 
+        async Task EnsureWorkLocations(Tenant t)
+        {
+            tenantInit.SetTenant(t.Id);
+            if (await db.WorkLocations.AnyAsync(x => x.TenantId == t.Id)) return;
+
+            db.WorkLocations.AddRange(
+                new WorkLocation { Name = "Head Office", Type = WorkLocationType.Office, Latitude = 120.5963, RadiusMeters = 150 },
+                new WorkLocation { Name = "Remote / Work from home", Type = WorkLocationType.Remote });
+
+            await db.SaveChangesAsync();
+        }
+
+        await EnsureWorkLocations(acme);
+        await EnsureWorkLocations(globex);
+
+        var acmeEmployeeUser = await EnsureUser("employee@acme.test", false, acme);
+
+        await EnsureTenantRole(db, acme, "Employee", isSystemRole: true,
+            [Permissions.Attendance.Clock], assignTo: acmeEmployeeUser);
+
         await EnsureOnboardingTemplates(acme);
         await EnsureOnboardingTemplates(globex);
 
@@ -149,6 +169,7 @@ public static class DevDataSeeder
            Permissions.Employees.Read,
            Permissions.Employees.Write,
            Permissions.Employees.Delete,
+           Permissions.Employees.LinkUser,
            Permissions.Tenant.ManageRoles,
            Permissions.Tenant.ManageSettings,
            Permissions.Branches.Read,
@@ -177,6 +198,9 @@ public static class DevDataSeeder
            Permissions.WorkSchedules.Read,
            Permissions.WorkSchedules.Write,
            Permissions.WorkSchedules.Delete,
+           Permissions.WorkLocations.Read,
+           Permissions.WorkLocations.Write,
+           Permissions.WorkLocations.Delete,
         ], assignTo:acmeAdmin);
 
         var multiUser = await users.FindByEmailAsync("multi@hrms.test")
@@ -202,6 +226,12 @@ public static class DevDataSeeder
             Permissions.JobPosting.Read,
             Permissions.JobPosting.Write,
             Permissions.JobPosting.Delete,
+            Permissions.WorkSchedules.Read,
+            Permissions.WorkSchedules.Write,
+            Permissions.WorkSchedules.Delete,
+            Permissions.WorkLocations.Read,
+            Permissions.WorkLocations.Write,
+            Permissions.WorkLocations.Delete,
         ], assignTo: multiUser);
     }
 
@@ -241,6 +271,4 @@ public static class DevDataSeeder
 
         await db.SaveChangesAsync();
     }
-    
-    
 }

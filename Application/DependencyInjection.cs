@@ -28,6 +28,10 @@ public static class DependencyInjection
         services.AddScoped<IOnboardingService, OnboardingService>();
         services.AddScoped<IOnboardingTaskTemplateService, OnboardingTaskTemplateService>();
         services.AddScoped<IWorkScheduleService, WorkScheduleService>();
+        services.AddScoped<IWorkLocationService, WorkLocationService>();
+        services.AddScoped<IEmployeeWorkLocationService, EmployeeWorkLocationService>();
+        services.AddScoped<IAttendanceService, AttendanceService>();
+        services.AddScoped<IEmployeeUserLinkService, EmployeeUserLinkService>();
 
         return services;
     }

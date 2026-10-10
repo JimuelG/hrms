@@ -10,5 +10,6 @@ public enum TimeLineEventType
     DocumentUploaded = 7,
     DocumentVerified = 8,
     DocumentRejected = 9,
+    WorkLocationChanged = 10,
     Note = 99
 }

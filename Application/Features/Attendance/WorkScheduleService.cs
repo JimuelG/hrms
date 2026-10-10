@@ -80,7 +80,7 @@ public sealed class WorkScheduleService(
         s.Name,
         s.StartTime,
         s.EndTime,
-        s.WorkingDays,
+        (int)s.WorkingDays,
         s.IsActive,
         s.CreatedAtUtc);
 }

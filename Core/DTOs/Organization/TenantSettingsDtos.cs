@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Core.Common;
 using Core.Enums;
 
 namespace Core.DTOs.Organization;
@@ -37,6 +38,7 @@ public sealed class UpdateTenantSettingsDto
     [MaxLength(30)]
     public string? ContactPhone { get; init; }
     [Required, MaxLength(100)]
+    [TimeZoneId]
     public string TimeZoneId { get; init; } = "UTC";
     [Required, MaxLength(3)]
     public string Currency { get; init; } = "PHP";

@@ -21,6 +21,8 @@ public class EmployeeConfiguration : IEntityTypeConfiguration<Employee>
         builder.HasOne(e => e.Department).WithMany().HasForeignKey(e => e.DepartmentId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.Position).WithMany().HasForeignKey(e => e.PositionId).OnDelete(DeleteBehavior.Restrict);
 
+        builder.HasIndex(e => new { e.TenantId, e.UserId }).IsUnique().HasFilter("[UserId] IS NOT NULL AND [IsDeleted] = 0");
+
         builder.HasOne(e => e.Manager).WithMany(e => e.DirectReports)
             .HasForeignKey(e => e.ManagerId).IsRequired(false).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne(e => e.Schedule).WithMany().HasForeignKey(e => e.ScheduleId).IsRequired(false).OnDelete(DeleteBehavior.Restrict);

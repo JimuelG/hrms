@@ -8,6 +8,7 @@ public static class Permissions
         public const string Read = "employees.read";
         public const string Write = "employees.write";
         public const string Delete = "employees.delete";
+        public const string LinkUser = "employees.link_user";
     }
 
     public static class Tenant
@@ -82,11 +83,25 @@ public static class Permissions
         public const string Delete = "workschedules.delete";
     }
 
+    public static class WorkLocations
+    {
+        public const string Read = "worklocations.read";
+        public const string Write = "worklocations.write";
+        public const string Delete = "worklocations.delete";
+    }
+
+    public static class Attendance
+    {
+        public const string Clock = "attendance.clock";
+        public const string Read = "attendance.read";
+    }
+
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
         (Employees.Read, "Employees", "View employee records"),
         (Employees.Write, "Employees", "Create and edit employee records"),
         (Employees.Delete, "Employees", "Delete employee records"),
+        (Employees.LinkUser, "Employees", "Link employee to a user account"),
         (Tenant.ManageRoles, "Tenant", "Create and edit roles and permissions"),
         (Tenant.ManageSettings, "Tenant", "Edit tenant/company settings"),
         (Branches.Read, "Branches", "View branches"),
@@ -115,5 +130,10 @@ public static class Permissions
         (WorkSchedules.Read, "WorkSchedules", "View work schedules"),
         (WorkSchedules.Write, "WorkSchedules", "Create and edit work schedules"),
         (WorkSchedules.Delete, "WorkSchedules", "Delete work schedules"),
+        (WorkLocations.Read, "WorkLocations", "View work locations"),
+        (WorkLocations.Write, "WorkLocations", "Create and edit work locations"),
+        (WorkLocations.Delete, "WorkLocations", "Delete work locations"),
+        (Attendance.Clock, "Attendance", "Clock in and out for yourself"),
+        (Attendance.Read, "Attendance", "View attendance for all employees"),
     ];
 }
