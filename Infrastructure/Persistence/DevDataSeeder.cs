@@ -154,7 +154,7 @@ public static class DevDataSeeder
 
         var acmeEmployeeUser = await EnsureUser("employee@acme.test", false, acme);
 
-        await EnsureTenantRole(db, acme, "Employee", isSystemRole: true,
+        await EnsureTenantRole(db, tenantInit, acme, "Employee", isSystemRole: true,
             [Permissions.Attendance.Clock], assignTo: acmeEmployeeUser);
 
         await EnsureOnboardingTemplates(acme);
@@ -164,7 +164,7 @@ public static class DevDataSeeder
         await EnsureSubscription(globex, starter);
 
         tenantInit.SetTenant(acme.Id);
-        await EnsureTenantRole(db, acme, "HR Admin", isSystemRole: true,
+        await EnsureTenantRole(db, tenantInit, acme, "HR Admin", isSystemRole: true,
         [
            Permissions.Employees.Read,
            Permissions.Employees.Write,
@@ -207,7 +207,7 @@ public static class DevDataSeeder
             ?? throw new InvalidOperationException("multi@hrms.test must be seeded before assigning its Globex role.");
 
         tenantInit.SetTenant(globex.Id);
-        await EnsureTenantRole(db, globex, "HR Admin", isSystemRole: true,
+        await EnsureTenantRole(db, tenantInit, globex, "HR Admin", isSystemRole: true,
         [
             Permissions.Employees.Read,
             Permissions.Employees.Write,
@@ -236,9 +236,11 @@ public static class DevDataSeeder
     }
 
     private static async Task EnsureTenantRole(
-        AppDbContext db, Tenant tenant, string roleName, bool isSystemRole,
+        AppDbContext db, ITenantContextInitializer tenantInit, Tenant tenant, string roleName, bool isSystemRole,
         string[] permissionCodes, ApplicationUser assignTo)
     {
+        tenantInit.SetTenant(tenant.Id);
+
         var role = await db.Roles.FirstOrDefaultAsync(r => r.TenantId == tenant.Id && r.Name == roleName);
         
         if (role is null)
@@ -258,11 +260,8 @@ public static class DevDataSeeder
             .Select(rp => rp.PermissionId)
             .ToListAsync();
 
-        var toAdd = permissionIds.Except(existingLinks);
-        foreach (var permId in toAdd)
-        {
-            db.RolePermissions.Add(new RolePermission { TenantId = tenant.Id, RoleId = role.Id, PermissionId = permId });
-        }
+        foreach (var permId in permissionIds.Except(existingLinks))
+            db.RolePermissions.Add(new RolePermission { TenantId = tenant.Id, RoleId = role.Id, PermissionId = permId});
 
         var alreadyAssigned = await db.UserTenantRoles.AnyAsync(utr =>
             utr.UserId == assignTo.Id && utr.TenantId == tenant.Id && utr.RoleId == role.Id);

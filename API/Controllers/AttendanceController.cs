@@ -42,4 +42,6 @@ public class AttendanceController(IAttendanceService service) : BaseApiControlle
         [FromQuery] Guid? employeeId, [FromQuery] bool needsReview = false,
         [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken ct = default) =>
         (await service.QueryAsync(from!.Value, to!.Value, employeeId, needsReview, page, pageSize, ct)).ToActionResult(this);
+
+        
 }

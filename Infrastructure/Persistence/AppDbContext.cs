@@ -51,6 +51,8 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<WorkLocation> WorkLocations => Set<WorkLocation>();
     public DbSet<EmployeeWorkLocation> EmployeeWorkLocations => Set<EmployeeWorkLocation>();
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
+    public DbSet<AttendanceCorrectionRequest> AttendanceCorrectionRequests => Set<AttendanceCorrectionRequest>();
+    public DbSet<OvertimeRequest> OvertimeRequests => Set<OvertimeRequest>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

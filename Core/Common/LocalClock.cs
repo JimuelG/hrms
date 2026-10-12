@@ -22,4 +22,12 @@ public static class LocalClock
         catch (TimeZoneNotFoundException) { return TimeZoneInfo.Utc; }
         catch (InvalidTimeZoneException) { return TimeZoneInfo.Utc; }
     }
+
+    public static DateTime? ToUtc(DateOnly date, TimeOnly time, string? timeZoneId)
+    {
+        var zone = Resolve(timeZoneId);
+        var local = DateTime.SpecifyKind(date.ToDateTime(time), DateTimeKind.Unspecified);
+        if (zone.IsInvalidTime(local)) return null;
+        return TimeZoneInfo.ConvertTimeToUtc(local, zone);
+    }
 }

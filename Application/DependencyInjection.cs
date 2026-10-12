@@ -5,6 +5,7 @@ using Application.Features.Employees;
 using Application.Features.Onboarding;
 using Application.Features.Positions;
 using Application.Features.Recruitment;
+using Core.DTOs.Attendance;
 using Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -32,6 +33,9 @@ public static class DependencyInjection
         services.AddScoped<IEmployeeWorkLocationService, EmployeeWorkLocationService>();
         services.AddScoped<IAttendanceService, AttendanceService>();
         services.AddScoped<IEmployeeUserLinkService, EmployeeUserLinkService>();
+        services.AddScoped<ITimeZoneResolver, EmployeeTimeZoneResolver>();
+        services.AddScoped<IAttendanceCorrectionService, AttendanceCorrectionService>();
+        services.AddScoped<IOvertimeService, OvertimeService>();
 
         return services;
     }

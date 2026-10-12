@@ -145,6 +145,65 @@ namespace Infrastructure.Migrations
                     b.ToTable("Applications");
                 });
 
+            modelBuilder.Entity("Core.Entities.AttendanceCorrectionRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("RequestedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly?>("RequestedClockIn")
+                        .HasColumnType("time");
+
+                    b.Property<TimeOnly?>("RequestedClockOut")
+                        .HasColumnType("time");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("EmployeeId", "Date");
+
+                    b.ToTable("AttendanceCorrectionRequests");
+                });
+
             modelBuilder.Entity("Core.Entities.AttendanceRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1111,6 +1170,68 @@ namespace Infrastructure.Migrations
                     b.ToTable("OnboardingTaskTemplates");
                 });
 
+            modelBuilder.Entity("Core.Entities.OvertimeRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("ApprovedMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly>("EndTime")
+                        .HasColumnType("time");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("RequestedMinutes")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ReviewNote")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("ReviewedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ReviewedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Status");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("EmployeeId", "Date");
+
+                    b.ToTable("OvertimeRequests");
+                });
+
             modelBuilder.Entity("Core.Entities.Permission", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1853,6 +1974,17 @@ namespace Infrastructure.Migrations
                     b.Navigation("JobPosting");
                 });
 
+            modelBuilder.Entity("Core.Entities.AttendanceCorrectionRequest", b =>
+                {
+                    b.HasOne("Core.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
+                });
+
             modelBuilder.Entity("Core.Entities.AttendanceRecord", b =>
                 {
                     b.HasOne("Core.Entities.WorkLocation", null)
@@ -2058,6 +2190,17 @@ namespace Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("OnboardingCase");
+                });
+
+            modelBuilder.Entity("Core.Entities.OvertimeRequest", b =>
+                {
+                    b.HasOne("Core.Entities.Employee", "Employee")
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Employee");
                 });
 
             modelBuilder.Entity("Core.Entities.RolePermission", b =>

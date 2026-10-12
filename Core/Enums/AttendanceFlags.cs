@@ -5,5 +5,6 @@ public enum AttendanceFlags
     None = 0,
     ClockInLocationUnverified = 1,
     ClockOutLocationUnverified = 2,
-    LongShift = 4
+    LongShift = 4,
+    ManuallyCorrected = 8
 }

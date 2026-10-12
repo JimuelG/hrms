@@ -94,6 +94,7 @@ public static class Permissions
     {
         public const string Clock = "attendance.clock";
         public const string Read = "attendance.read";
+        public const string Approve = "attendance.approve";
     }
 
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
@@ -135,5 +136,6 @@ public static class Permissions
         (WorkLocations.Delete, "WorkLocations", "Delete work locations"),
         (Attendance.Clock, "Attendance", "Clock in and out for yourself"),
         (Attendance.Read, "Attendance", "View attendance for all employees"),
+        (Attendance.Approve, "Attendance", "Review attendance corrections and overtime requests"),
     ];
 }
