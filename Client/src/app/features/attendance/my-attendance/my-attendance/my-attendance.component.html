@@ -1,0 +1,311 @@
+<div class="max-w-4xl">
+  <div class="mb-6">
+    <h1 class="text-xl font-semibold tracking-tight">Attendance</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Clock in and out, and manage your correction and overtime requests.</p>
+  </div>
+
+  @if (loading()) {
+    <p class="text-sm text-slate-400">Loading…</p>
+  } @else if (loadError()) {
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 text-center">
+      <i class="fa-solid fa-user-slash text-slate-300 dark:text-slate-600 text-2xl mb-3"></i>
+      <p class="text-sm text-slate-600 dark:text-slate-300">{{ loadError() }}</p>
+    </div>
+  } @else {
+
+    <!-- Clock card -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-6 mb-6">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+        <div>
+          <div class="text-4xl font-semibold tracking-tight tabular-nums">{{ now() | date:'h:mm a' }}</div>
+          <div class="text-sm text-slate-500 dark:text-slate-400 mt-1">{{ now() | date:'EEEE, MMMM d' }}</div>
+        </div>
+
+        <div class="sm:text-right space-y-3">
+          @if (openRecord(); as open) {
+            <div>
+              <div class="text-sm font-medium inline-flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Clocked in
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Since {{ open.clockInUtc | date:'h:mm a' }}
+                @if (open.clockInLocationName) { · {{ open.clockInLocationName }} }
+                · {{ formatMinutes(elapsedMinutes()) }} so far
+              </div>
+            </div>
+            <button (click)="clockOut()" [disabled]="busy()"
+              class="inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium bg-slate-800 hover:bg-slate-900 dark:bg-slate-200 dark:hover:bg-white text-white dark:text-slate-900 disabled:opacity-60">
+              <i class="fa-solid" [class.fa-right-from-bracket]="!busy()" [class.fa-spinner]="busy()" [class.fa-spin]="busy()"></i>
+              Clock out
+            </button>
+          } @else if (status() === 'done') {
+            @if (latest(); as last) {
+              <div class="text-sm font-medium inline-flex items-center gap-2">
+                <i class="fa-solid fa-circle-check text-emerald-500"></i> Done for today
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">
+                {{ last.clockInUtc | date:'h:mm a' }} – {{ last.clockOutUtc | date:'h:mm a' }} · {{ formatMinutes(last.workedMinutes) }} worked
+              </div>
+            }
+          } @else {
+            <div class="text-sm font-medium inline-flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600"></span> Not clocked in
+            </div>
+            <div class="flex flex-wrap gap-2 sm:justify-end">
+              @if (hasOnsite()) {
+                <button (click)="clockIn()" [disabled]="busy()"
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-60">
+                  <i class="fa-solid" [class.fa-location-crosshairs]="!busy()" [class.fa-spinner]="busy()" [class.fa-spin]="busy()"></i>
+                  Clock in
+                </button>
+              }
+              @for (loc of remoteLocations(); track loc.id) {
+                <button (click)="clockIn(loc)" [disabled]="busy()"
+                  class="inline-flex items-center gap-2 px-4 py-2.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">
+                  <i class="fa-solid fa-house-laptop text-xs"></i> Clock in · {{ loc.name }}
+                </button>
+              }
+            </div>
+            @if (locations().length === 0) {
+              <p class="text-xs text-slate-500 dark:text-slate-400">No work location is assigned to you for today. Contact HR.</p>
+            }
+          }
+        </div>
+      </div>
+
+      @if (status() === 'stale') {
+        <div class="mt-5 flex items-start gap-2 bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-sm rounded-md px-3 py-2.5">
+          <i class="fa-solid fa-triangle-exclamation text-xs mt-1"></i>
+          <span>
+            This shift has been open for more than 16 hours. If you forgot to clock out, request a correction so the right time is recorded
+            (<button class="underline font-medium" (click)="openCorrection(openRecord()!.date)">request correction</button>).
+          </span>
+        </div>
+      }
+
+      @if (busy() && actionMessage()) {
+        <div class="mt-4 text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 sm:justify-end">
+          <i class="fa-solid fa-spinner fa-spin text-xs"></i> {{ actionMessage() }}
+        </div>
+      }
+      @if (actionError()) {
+        <div class="mt-4 flex items-start gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5">
+          <i class="fa-solid fa-circle-exclamation text-xs mt-1"></i> {{ actionError() }}
+        </div>
+      }
+      @if (actionNotice()) {
+        <div class="mt-4 flex items-start gap-2 bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-sm rounded-md px-3 py-2.5">
+          <i class="fa-solid fa-triangle-exclamation text-xs mt-1"></i> {{ actionNotice() }}
+        </div>
+      }
+      @if (lastFix(); as fix) {
+        <div class="mt-3 text-xs text-slate-400 sm:text-right">
+          Last location reading: accurate to about {{ round(fix.accuracyMeters) }} m
+        </div>
+      }
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-1 border-b border-slate-200 dark:border-slate-800 mb-4">
+      @for (t of tabs; track t.key) {
+        <button (click)="tab.set(t.key)"
+          class="px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors"
+          [class.border-indigo-600]="tab() === t.key" [class.text-indigo-600]="tab() === t.key" [class.dark:text-indigo-400]="tab() === t.key"
+          [class.border-transparent]="tab() !== t.key" [class.text-slate-500]="tab() !== t.key" [class.dark:text-slate-400]="tab() !== t.key">
+          {{ t.label }}
+        </button>
+      }
+    </div>
+
+    @if (listError()) {
+      <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4">
+        <i class="fa-solid fa-circle-exclamation text-xs"></i> {{ listError() }}
+      </div>
+    }
+
+    <!-- My records -->
+    @if (tab() === 'records') {
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto">
+        <table class="w-full text-sm min-w-[680px]">
+          <thead>
+            <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+              <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Date</th>
+              <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">In</th>
+              <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Out</th>
+              <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Worked</th>
+              <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Location</th>
+              <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Notes</th>
+              <th class="px-4 py-2.5"></th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+            @for (r of records(); track r.id) {
+              <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+                <td class="px-4 py-3 font-medium whitespace-nowrap">{{ r.date | date:'EEE, MMM d' }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">{{ r.clockInUtc | date:'h:mm a' }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                  @if (r.clockOutUtc) { {{ r.clockOutUtc | date:'h:mm a' }} }
+                  @else { <span class="text-amber-600 dark:text-amber-400 font-medium">Open</span> }
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ formatMinutes(r.workedMinutes) }}</td>
+                <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ r.clockInLocationName ?? '—' }}</td>
+                <td class="px-4 py-3">
+                  <div class="flex flex-wrap gap-1">
+                    @for (f of describeFlags(r.flags); track f.label) {
+                      <span class="text-[11px] font-medium px-1.5 py-0.5 rounded" [class]="toneClass(f.tone)">{{ f.label }}</span>
+                    }
+                  </div>
+                </td>
+                <td class="px-4 py-3 text-right whitespace-nowrap">
+                  <button (click)="openCorrection(r.date)" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">Correct</button>
+                </td>
+              </tr>
+            } @empty {
+              <tr><td colspan="7" class="px-4 py-10 text-center text-slate-400 text-sm">No attendance in the last two weeks.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+
+    <!-- Corrections -->
+    @if (tab() === 'corrections') {
+      <div class="flex justify-end mb-3">
+        <button (click)="openCorrection()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3 py-1.5 rounded-md">
+          <i class="fa-solid fa-plus text-xs"></i> Request correction
+        </button>
+      </div>
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800">
+        @for (c of corrections(); track c.id) {
+          <div class="p-4 flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <div class="text-sm font-medium flex items-center gap-2">
+                {{ c.date | date:'EEE, MMM d, y' }}
+                <span class="text-[11px] font-medium px-1.5 py-0.5 rounded" [class]="statusClass(c.status)">{{ statusLabel[c.status] }}</span>
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                @if (c.requestedClockIn) { Clock in {{ formatTimeOnly(c.requestedClockIn) }} }
+                @if (c.requestedClockIn && c.requestedClockOut) { · }
+                @if (c.requestedClockOut) { Clock out {{ formatTimeOnly(c.requestedClockOut) }} }
+              </div>
+              <div class="text-xs text-slate-400 mt-1">{{ c.reason }}</div>
+              @if (c.enteredByApprover) { <div class="text-xs text-slate-400 mt-1">Entered by an approver</div> }
+              @if (c.reviewNote) { <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Review note: {{ c.reviewNote }}</div> }
+            </div>
+            @if (c.status === APPROVAL.Pending) {
+              <button (click)="cancelCorrection(c)" class="text-xs font-medium px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 shrink-0">Cancel</button>
+            }
+          </div>
+        } @empty {
+          <p class="text-sm text-slate-400 text-center py-10">No correction requests yet.</p>
+        }
+      </div>
+    }
+
+    <!-- Overtime -->
+    @if (tab() === 'overtime') {
+      <div class="flex justify-end mb-3">
+        <button (click)="openOvertime()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3 py-1.5 rounded-md">
+          <i class="fa-solid fa-plus text-xs"></i> Request overtime
+        </button>
+      </div>
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800">
+        @for (o of overtime(); track o.id) {
+          <div class="p-4 flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <div class="text-sm font-medium flex items-center gap-2">
+                {{ o.date | date:'EEE, MMM d, y' }}
+                <span class="text-[11px] font-medium px-1.5 py-0.5 rounded" [class]="statusClass(o.status)">{{ statusLabel[o.status] }}</span>
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {{ formatTimeOnly(o.startTime) }} – {{ formatTimeOnly(o.endTime) }} · {{ formatMinutes(o.requestedMinutes) }} requested
+                @if (o.status === APPROVAL.Approved && o.approvedMinutes !== null) { · {{ formatMinutes(o.approvedMinutes) }} approved }
+              </div>
+              <div class="text-xs text-slate-400 mt-1">{{ o.reason }}</div>
+              @if (o.reviewNote) { <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Review note: {{ o.reviewNote }}</div> }
+            </div>
+            @if (o.status === APPROVAL.Pending) {
+              <button (click)="cancelOvertime(o)" class="text-xs font-medium px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 shrink-0">Cancel</button>
+            }
+          </div>
+        } @empty {
+          <p class="text-sm text-slate-400 text-center py-10">No overtime requests yet.</p>
+        }
+      </div>
+    }
+  }
+</div>
+
+<!-- Correction modal -->
+@if (correctionOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="correctionOpen.set(false)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5 max-h-[90vh] overflow-y-auto">
+    <h2 class="font-semibold text-sm mb-1">Request an attendance correction</h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Enter times as they read on the office clock. Leave a time blank to keep the one already recorded.</p>
+    @if (correctionError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ correctionError() }}</div> }
+    <div class="space-y-3">
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Date</span>
+        <input type="date" [max]="todayIso()" [(ngModel)]="correctionForm.date" name="correctionDate"
+          class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Clock in</span>
+          <input type="time" [(ngModel)]="correctionForm.clockIn" name="correctionIn"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Clock out</span>
+          <input type="time" [(ngModel)]="correctionForm.clockOut" name="correctionOut"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </label>
+      </div>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Reason</span>
+        <textarea rows="3" [(ngModel)]="correctionForm.reason" name="correctionReason" maxlength="500"
+          class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"></textarea>
+      </label>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="correctionOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="submitCorrection()" [disabled]="correctionSaving()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">
+        {{ correctionSaving() ? 'Sending…' : 'Send request' }}
+      </button>
+    </div>
+  </div>
+}
+
+<!-- Overtime modal -->
+@if (overtimeOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="overtimeOpen.set(false)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5 max-h-[90vh] overflow-y-auto">
+    <h2 class="font-semibold text-sm mb-4">Request overtime</h2>
+    @if (overtimeError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ overtimeError() }}</div> }
+    <div class="space-y-3">
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Date</span>
+        <input type="date" [(ngModel)]="overtimeForm.date" name="overtimeDate"
+          class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">From</span>
+          <input type="time" [(ngModel)]="overtimeForm.startTime" name="overtimeStart"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">To</span>
+          <input type="time" [(ngModel)]="overtimeForm.endTime" name="overtimeEnd"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </label>
+      </div>
+      @if (overtimePreview(); as preview) {
+        <div class="text-xs text-slate-500 dark:text-slate-400">That's {{ preview }} of overtime.</div>
+      }
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Reason</span>
+        <textarea rows="3" [(ngModel)]="overtimeForm.reason" name="overtimeReason" maxlength="500"
+          class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"></textarea>
+      </label>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="overtimeOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="submitOvertime()" [disabled]="overtimeSaving()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">
+        {{ overtimeSaving() ? 'Sending…' : 'Send request' }}
+      </button>
+    </div>
+  </div>
+}

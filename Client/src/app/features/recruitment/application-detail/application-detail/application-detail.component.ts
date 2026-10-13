@@ -131,7 +131,17 @@ export class ApplicationDetailComponent implements OnInit{
 
   submitSchedule(): void {
     this.scheduleError.set(null);
-    this.interviewService.schedule(this.scheduleForm as ScheduleInterviewValue).subscribe({
+
+    const local = this.scheduleForm.scheduledAtUtc;
+    const when = local ? new Date(local) : null;
+    if (!when || isNaN(when.getTime())) {
+      this.scheduleError.set('Pick a date and time for the interview.');
+      return;
+    }  
+
+    const payload = { ...this.scheduleForm, scheduleAtUtc: when.toISOString() } as ScheduleInterviewValue;
+
+    this.interviewService.schedule(payload).subscribe({
       next: () => {
         this.scheduleOpen.set(false);
         this.loadInterviews();

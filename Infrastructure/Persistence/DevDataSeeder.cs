@@ -201,6 +201,7 @@ public static class DevDataSeeder
            Permissions.WorkLocations.Read,
            Permissions.WorkLocations.Write,
            Permissions.WorkLocations.Delete,
+           Permissions.Attendance.Clock,
         ], assignTo:acmeAdmin);
 
         var multiUser = await users.FindByEmailAsync("multi@hrms.test")

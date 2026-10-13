@@ -32,3 +32,5 @@ public sealed record AttendanceRecordDto(
     double? ClockOutLongitude,
     int? WorkedMinutes,
     int Flags);
+
+public sealed record MyWorkLocationDto(Guid Id, string Name, int Type);

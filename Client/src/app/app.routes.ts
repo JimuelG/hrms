@@ -18,6 +18,7 @@ import { ApplicantsComponent } from './features/recruitment/applicants/applicant
 import { PipelineComponent } from './features/recruitment/pipeline/pipeline/pipeline.component';
 import { ApplicationDetailComponent } from './features/recruitment/application-detail/application-detail/application-detail.component';
 import { OnboardingTemplatesComponent } from './features/recruitment/onboarding-templates/onboarding-templates/onboarding-templates.component';
+import { MyAttendanceComponent } from './features/attendance/my-attendance/my-attendance/my-attendance.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent},
@@ -39,6 +40,7 @@ export const routes: Routes = [
             { path: 'recruitment/pipeline/:jobPostingId', component: PipelineComponent},
             { path: 'recruitment/applications/:id', component: ApplicationDetailComponent},
             { path: 'recruitment/onboarding-templates', component: OnboardingTemplatesComponent},
+            { path: 'attendance', component: MyAttendanceComponent},
         ]
     },
     {

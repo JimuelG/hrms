@@ -127,6 +127,7 @@ export enum TimelineEventType {
     DocumentVerified = 8,
     DocumentRejected = 9,
     WorkLocationChanged = 10,
+    AttendanceCorrected = 11,
     Note = 99
 }
 
@@ -141,6 +142,7 @@ export const TIMELINE_ICONS: Record<TimelineEventType, string> = {
     [TimelineEventType.DocumentVerified]: 'fa-file-circle-check',
     [TimelineEventType.DocumentRejected]: 'fa-file-circle-xmark',
     [TimelineEventType.WorkLocationChanged]: 'fa-location-dot',
+    [TimelineEventType.AttendanceCorrected]: 'fa-clock-rotate-left',
     [TimelineEventType.Note]: 'fa-note-sticky'
 }
 

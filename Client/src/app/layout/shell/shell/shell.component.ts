@@ -29,6 +29,7 @@ export class ShellComponent {
     { label: 'Applicants', path: '/recruitment/applicants', icon: 'fa-briefcase'},
     { label: 'Job Postings', path: '/recruitment/job-postings', icon: 'fa-user-group'},
     { label: 'Onboarding', path: '/recruitment/onboarding-templates', icon: 'fa-clipboard-check'},
+    { label: 'Attendance', path: '/attendance', icon: 'fa-clock'},
     { label: 'Settings', path: '/settings', icon: 'fa-gear'},
   ];
 

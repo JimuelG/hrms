@@ -43,5 +43,11 @@ public class AttendanceController(IAttendanceService service) : BaseApiControlle
         [FromQuery] int page = 1, [FromQuery] int pageSize = 50, CancellationToken ct = default) =>
         (await service.QueryAsync(from!.Value, to!.Value, employeeId, needsReview, page, pageSize, ct)).ToActionResult(this);
 
-        
+    [HasPermission(Permissions.Attendance.Clock)]        
+    [HttpGet("my-locations")]
+    public async Task<IActionResult> GetMyLocations(CancellationToken ct)
+    {
+        if (!TryGetUsedId(out var userId)) return Unauthorized();
+        return (await service.GetMyLocationsAsync(userId, ct)).ToActionResult(this);
+    }
 }

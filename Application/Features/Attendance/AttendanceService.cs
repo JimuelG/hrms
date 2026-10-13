@@ -208,6 +208,19 @@ public class AttendanceService(
             .ToList();
     }
 
+    public async Task<ServiceResult<IReadOnlyList<MyWorkLocationDto>>> GetMyLocationsAsync(Guid userId, CancellationToken ct)
+    {
+        var employee = await employees.GetEntityWithSpec(new EmployeeByUserIdSpecification(userId), ct);
+        if (employee is null)
+            return ServiceResult<IReadOnlyList<MyWorkLocationDto>>.Fail(NotLinked, ServiceErrorType.NotFound);
+
+        var today = LocalClock.LocalDate(clock.GetUtcNow().UtcDateTime, await TimeZoneIdAsync(employee, ct));
+        var usable = await UsableLocationAsync(employee.Id, today, ct);
+
+        return ServiceResult<IReadOnlyList<MyWorkLocationDto>>.Success(
+            usable.OrderBy(l => l.Name).Select(l => new MyWorkLocationDto(l.Id, l.Name, (int)l.Type)).ToList());
+    }
+
     private async Task<string?> TimeZoneIdAsync(Employee employee, CancellationToken ct)
     {
         var branch = await branches.GetByIdAsync(employee.BranchId, ct);
