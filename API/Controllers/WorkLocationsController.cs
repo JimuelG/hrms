@@ -33,6 +33,6 @@ public class WorkLocationsController(IWorkLocationService service) : BaseApiCont
 
     [HasPermission(Permissions.WorkLocations.Delete)]
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> Delet(Guid id, CancellationToken ct) =>
+    public async Task<IActionResult> Delete(Guid id, CancellationToken ct) =>
         (await service.DeleteAsync(id, ct)).ToActionResult(this);
 }

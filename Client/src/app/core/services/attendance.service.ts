@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment.development';
-import { AttendanceRecord, ClockRequest, MyWorkLocation } from '../../shared/models/attendance';
+import { AttendanceQuery, AttendanceRecord, ClockRequest, MyWorkLocation, PagedResult } from '../../shared/models/attendance';
 import { Observable } from 'rxjs';
 
 @Injectable({
@@ -28,5 +28,18 @@ export class AttendanceService {
 
   getMyLocations(): Observable<MyWorkLocation[]> {
     return this.http.get<MyWorkLocation[]>(`${this.baseUrl}/my-locations`);
+  }
+
+  query(q: AttendanceQuery): Observable<PagedResult<AttendanceRecord>> {
+    const params: Record<string, string> = {
+      from: q.from,
+      to: q.to,
+      page: String(q.page ?? 1),
+      pageSize: String(q.pageSize ?? 25),
+      needsReview: String(!!q.needsReview)
+    };
+
+    if (q.employeeId) params['employeeId'] = q.employeeId;
+    return this.http.get<PagedResult<AttendanceRecord>>(this.baseUrl, { params });
   }
 }

@@ -1,4 +1,4 @@
-import { ApprovalStatus, FlagTone } from "../models/attendance";
+import { ApprovalStatus, AttendanceRecord, FlagTone } from "../models/attendance";
 
 export const toApiTime = (v: string | null | undefined): string | undefined =>
     v ? (v.length === 5 ? `${v}:00` : v) : undefined;
@@ -42,3 +42,10 @@ export function flagToneClass(tone: FlagTone): string {
         default: return 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400';
     }
 }
+
+export function isStaleOpen(r: AttendanceRecord, nowMs: number): boolean {
+    return !r.clockOutUtc && nowMs - Date.parse(r.clockInUtc) > 16 * 60 * 60 * 1000;
+}
+
+export const mapUrl = (lat: number, lon: number): string =>
+    `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lon}#map=18/${lat}/${lon}`;

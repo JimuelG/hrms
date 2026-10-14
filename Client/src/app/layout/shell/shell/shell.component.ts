@@ -1,7 +1,18 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from '../../../core/auth/auth.service';
 import { ThemeService } from '../../../core/services/theme.service';
+import { PermissionService } from '../../../core/services/permission.service';
+import { PERMISSIONS as P } from '../../../shared/constants/permissions';
+
+interface NavItem { 
+  label: string; 
+  path: string; 
+  icon: string; 
+  permission?: string; 
+  exact?: boolean}
+
+interface NavSection { title?: string; items: NavItem[]; }
 
 @Component({
   selector: 'app-shell',
@@ -13,27 +24,47 @@ import { ThemeService } from '../../../core/services/theme.service';
   templateUrl: './shell.component.html',
   styleUrl: './shell.component.scss',
 })
-export class ShellComponent {
+export class ShellComponent implements OnInit{
   private authService = inject(AuthService);
   private router = inject(Router);
+  readonly permissions = inject(PermissionService);
   theme = inject(ThemeService);
 
   sidebarOpen = signal(false);
 
-  navItems = [
-    { label: 'Dashboard', path: '/dashboard', icon: 'fa-gauge' },
-    { label: 'Employees', path: '/employees', icon: 'fa-users'},
-    { label: 'Branches', path: '/organization/branches', icon: 'fa-building' },
-    { label: 'Departments', path: '/organization/departments', icon: 'fa-sitemap'},
-    { label: 'Positions', path: '/organization/positions', icon: 'fa-id-badge'},
-    { label: 'Applicants', path: '/recruitment/applicants', icon: 'fa-briefcase'},
-    { label: 'Job Postings', path: '/recruitment/job-postings', icon: 'fa-user-group'},
-    { label: 'Onboarding', path: '/recruitment/onboarding-templates', icon: 'fa-clipboard-check'},
-    { label: 'Attendance', path: '/attendance', icon: 'fa-clock'},
-    { label: 'Settings', path: '/settings', icon: 'fa-gear'},
-  ];
+  private readonly sections: NavSection[] = [
+    { items: [{ label: 'Dashboard', path: '/dashboard', icon: 'fa-gauge' }] },
+    { title: 'People', items: [{ label: 'Employees', path: '/employees', icon: 'fa-users', permission: P.employees.read}] },
+    { title: 'Organization', items: [
+      { label: 'Branches', path: '/organization/branches', icon: 'fa-building', permission: P.branches.read },
+      { label: 'Departments', path: '/organization/departments', icon: 'fa-sitemap', permission: P.departments.read },
+      { label: 'Positions', path: '/organization/positions', icon: 'fa-id-badge', permission: P.positions.read}
+    ]},
+    { title: 'Recruitment', items: [
+      { label: 'Job Postings', path: '/recruitment/job-postings', icon: 'fa-briefcase', permission: P.jobPostings.read },
+      { label: 'Applicants', path: '/recruitment/applicants', icon: 'fa-user-group', permission: P.applicants.read },
+      { label: 'Onboarding', path: '/recruitment/onboarding-templates', icon: 'fa-clipboard-check', permission: P.onboarding.read },
+    ]},
+    { title: 'Attendance', items: [
+      { label: 'My Attendance', path: '/attendance', icon: 'fa-clock', permission: P.attendance.clock, exact: true },
+      { label: 'Approvals', path: '/attendance/approvals', icon: 'fa-list-check', permission: P.attendance.approve },
+      { label: 'Records', path: '/attendance/records', icon: 'fa-table-list', permission: P.attendance.read },
+      { label: 'Work schedules', path: '/attendance/schedules', icon: 'fa-calendar-week', permission: P.workSchedules.read },
+      { label: 'Work locations', path: '/attendance/locations', icon: 'fa-location-dot', permission: P.workLocations.read }
+    ]},
+    { items: [{ label: 'Settings', path: '/settings', icon: 'fa-gear', permission: P.tenant.manageSettings }] }
+  ]
+
+  visibleSections = computed(() =>
+    this.sections.map((s) => ({ ...s, items: s.items.filter((i) => !i.permission || this.permissions.can(i.permission)) })).filter((s) => s.items.length > 0));
+
+  ngOnInit(): void {
+    void this.permissions.load();
+  }
+
 
   logout(): void {
+    this.permissions.clear();
     this.authService.logout().subscribe(() => this.router.navigate(['/login']));
   }
 }

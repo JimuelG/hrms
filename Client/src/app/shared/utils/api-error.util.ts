@@ -10,3 +10,7 @@ export function extractApiError(err: HttpErrorResponse): string {
 
     return 'Something went wrong. Please try again.';
 }
+
+export function errorMessage(err: unknown): string {
+    return err instanceof HttpErrorResponse ? extractApiError(err) : 'Something went wrong. Please try again.';
+}

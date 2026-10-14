@@ -36,10 +36,12 @@ public sealed class AttendanceByEmployeeRangeSpecification : BaseSpecfication<At
 public sealed class AttendanceQuerySpecification : BaseSpecfication<AttendanceRecord>
 {
     public AttendanceQuerySpecification(
-        DateOnly from, DateOnly to, Guid? employeeId, bool needsReview, int? skip = null, int? take = null)
+        DateOnly from, DateOnly to, Guid? employeeId, bool needsReview, DateTime staleBeforeUtc, int? skip = null, int? take = null)
         : base(a => a.Date >= from && a.Date <= to
             && (employeeId == null || a.EmployeeId == employeeId)
-            && (!needsReview || a.Flags != AttendanceFlags.None))
+            && (!needsReview 
+                || a.Flags != AttendanceFlags.None
+                || (a.ClockOutUtc == null && a.ClockInUtc < staleBeforeUtc)))
     {
         AddInclude(a => a.Employee);
         AddOrderByDescending(a => a.ClockInUtc);

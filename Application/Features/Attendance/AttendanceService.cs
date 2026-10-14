@@ -123,9 +123,11 @@ public class AttendanceService(
         page = Math.Max(page, 1);
         pageSize = Math.Clamp(pageSize, 1, 100);
 
-        var total = await records.CountAsync(new AttendanceQuerySpecification(from, to, employeeId, needsReview), ct);
+        var staleBefore = clock.GetUtcNow().UtcDateTime - LongShift;
+
+        var total = await records.CountAsync(new AttendanceQuerySpecification(from, to, employeeId, needsReview, staleBefore), ct);
         var rows = await records.ListAsync(
-            new AttendanceQuerySpecification(from, to, employeeId, needsReview, (page - 1) * pageSize, pageSize), ct);
+            new AttendanceQuerySpecification(from, to, employeeId, needsReview, staleBefore, (page - 1) * pageSize, pageSize), ct);
 
         return ServiceResult<PagedResult<AttendanceRecordDto>>.Success(
             new PagedResult<AttendanceRecordDto>(rows.Select(ToDto).ToList(), total, page, pageSize));

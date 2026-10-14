@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment.development';
 import { Observable } from 'rxjs';
-import { WorkSchedule } from '../../shared/models/attendance';
+import { WorkSchedule, WorkScheduleFormValue } from '../../shared/models/attendance';
 import { HttpClient } from '@angular/common/http';
 
 @Injectable({
@@ -14,5 +14,17 @@ export class WorkScheduleService {
   getAll(search?: string): Observable<WorkSchedule[]> {
     const params = search ? { params: { search } } : {};
     return this.http.get<WorkSchedule[]>(this.baseUrl, params);
+  }
+
+  create(value: WorkScheduleFormValue): Observable<WorkSchedule> {
+    return this.http.post<WorkSchedule>(this.baseUrl, value);
+  }
+
+  update(id: string, value: WorkScheduleFormValue): Observable<WorkSchedule> {
+    return this.http.put<WorkSchedule>(`${this.baseUrl}/${id}`, value);
+  }
+
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${id}`);
   }
 }

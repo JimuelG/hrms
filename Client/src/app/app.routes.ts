@@ -19,6 +19,12 @@ import { PipelineComponent } from './features/recruitment/pipeline/pipeline/pipe
 import { ApplicationDetailComponent } from './features/recruitment/application-detail/application-detail/application-detail.component';
 import { OnboardingTemplatesComponent } from './features/recruitment/onboarding-templates/onboarding-templates/onboarding-templates.component';
 import { MyAttendanceComponent } from './features/attendance/my-attendance/my-attendance/my-attendance.component';
+import { permissionGuard } from './core/guards/permission-guard';
+import { PERMISSIONS } from './shared/constants/permissions';
+import { AttendanceRecordsComponent } from './features/attendance/records/attendance-records/attendance-records.component';
+import { WorkSchedulesComponent } from './features/attendance/work-schedules/work-schedules/work-schedules.component';
+import { WorkLocationsComponent } from './features/attendance/work-locations/work-locations/work-locations.component';
+import { ApprovalsComponent } from './features/attendance/approvals/approvals/approvals.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent},
@@ -40,7 +46,11 @@ export const routes: Routes = [
             { path: 'recruitment/pipeline/:jobPostingId', component: PipelineComponent},
             { path: 'recruitment/applications/:id', component: ApplicationDetailComponent},
             { path: 'recruitment/onboarding-templates', component: OnboardingTemplatesComponent},
-            { path: 'attendance', component: MyAttendanceComponent},
+            { path: 'attendance', component: MyAttendanceComponent, canActivate: [permissionGuard(PERMISSIONS.attendance.clock)]},
+            { path: 'attendance/approvals', component: ApprovalsComponent, canActivate: [permissionGuard(PERMISSIONS.attendance.approve)]},
+            { path: 'attendance/records', component: AttendanceRecordsComponent, canActivate: [permissionGuard(PERMISSIONS.attendance.read)]},
+            { path: 'attendance/schedules', component: WorkSchedulesComponent, canActivate: [permissionGuard(PERMISSIONS.workSchedules.read)]},
+            { path: 'attendance/locations', component: WorkLocationsComponent, canActivate: [permissionGuard(PERMISSIONS.workLocations.read)]},
         ]
     },
     {

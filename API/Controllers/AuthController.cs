@@ -74,6 +74,17 @@ public class AuthController(
         IsPlatformAdmin = User.HasClaim(JwtTokenService.PlatformAdminClaim, "true")
     });
 
+    [Authorize]
+    [HttpGet("permissions")]
+    public async Task<IActionResult> MyPermissions([FromServices] IPermissionService permissions, CancellationToken ct)
+    {
+        if (!tenant.HasTenant || !Guid.TryParse(User.FindFirst("sub")?.Value, out var userId))
+            return Ok(Array.Empty<string>());
+
+        var codes = await permissions.GetPermissionsAsync(userId, tenant.RequiredTenantId, ct);
+        return Ok(codes.OrderBy(c => c, StringComparer.Ordinal));
+    }
+
     private static LoginResponse ToResponse(AuthTokens t) =>
         new(t.AccessToken, t.AccessTokenExpiresAtUtc, false, null);
 

@@ -37,4 +37,12 @@ export class EmployeeService {
 
     return this.http.get<EmployeeSummary[]>(`${this.baseUrl}/eligible-managers`, params);
   }
+
+  linkUser(id: string, email: string): Observable<Employee> {
+    return this.http.put<Employee>(`${this.baseUrl}/${id}/user-link`, { email });
+  }
+
+  unlinkUser(id: string): Observable<Employee> {
+    return this.http.delete<Employee>(`${this.baseUrl}/${id}/user-link`);
+  }
 }

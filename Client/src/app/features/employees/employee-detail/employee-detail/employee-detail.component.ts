@@ -7,9 +7,13 @@ import { ContactService } from '../../../../core/services/emergency-contact.serv
 import { EmployeeDocumentService } from '../../../../core/services/employee-document.service';
 import { TimelineService } from '../../../../core/services/timeline.service';
 import { DocumentStatus, EmergencyContact, EmergencyContactFormValue, Employee, EMPLOYEE_STATUS_LABELS, EmployeeDocument, EMPLOYMENT_TYPE_LABELS, TIMELINE_ICONS, TimelineEvent } from '../../../../shared/models/employee';
-import { extractApiError } from '../../../../shared/utils/api-error.util';
+import { errorMessage, extractApiError } from '../../../../shared/utils/api-error.util';
 import { WorkScheduleService } from '../../../../core/services/work-schedule.service';
-import { WorkSchedule } from '../../../../shared/models/attendance';
+import { WORK_LOCATION_TYPE_LABELS, WorkLocation, WorkSchedule } from '../../../../shared/models/attendance';
+import { PermissionService } from '../../../../core/services/permission.service';
+import { PERMISSIONS } from '../../../../shared/constants/permissions';
+import { WorkLocationService } from '../../../../core/services/work-location.service';
+import { firstValueFrom } from 'rxjs';
 
 type Tab = 'profile' | 'contacts' | 'documents' | 'timeline';
 
@@ -32,6 +36,21 @@ export class EmployeeDetailComponent implements OnInit {
   private documentService = inject(EmployeeDocumentService);
   private timelineService = inject(TimelineService);
   private scheduleService = inject(WorkScheduleService);
+
+  readonly permissions = inject(PermissionService);
+  readonly P = PERMISSIONS;
+  private locationService = inject(WorkLocationService);
+  readonly locationTypeLabel = WORK_LOCATION_TYPE_LABELS;
+
+  allLocations = signal<WorkLocation[]>([]);
+  selectedLocationIds = signal<ReadonlySet<string>>(new Set());
+  locationsError = signal<string | null>(null);
+  locationsSaving = signal(false);
+  locationsSaved = signal(false);
+
+  linkEmail = '';
+  linkSaving = signal(false);
+  linkError = signal<string | null>(null);
 
   employeeId = this.route.snapshot.paramMap.get('id')!;
   employee = signal<Employee | null>(null);
@@ -241,6 +260,88 @@ export class EmployeeDetailComponent implements OnInit {
       error: (err) => {
         this.scheduleSaving.set(false);
         this.scheduleError.set(extractApiError(err));
+      }
+    })
+  }
+
+  private async loadLocations(): Promise<void> {
+    await this.permissions.ensureLoaded();
+    if (!this.permissions.can(PERMISSIONS.employees.write) || !this.permissions.can(PERMISSIONS.workLocations.read)) return;
+
+    try {
+      const [all, mine] = await Promise.all([
+        firstValueFrom(this.locationService.getAll()),
+        firstValueFrom(this.locationService.getForEmployee(this.employeeId))
+      ]);
+      const active = all.filter((l) => l.isActive);
+      this.allLocations.set(active);
+      this.selectedLocationIds.set(new Set(mine.filter((m) => active.some((a) => a.id === m.id)).map((m) => m.id)));
+    } catch (err) {
+      this.locationsError.set(errorMessage(err));
+    }
+  }
+
+  toggleLocation(id: string): void {
+    this.selectedLocationIds.update((s) => {
+      const next = new Set(s);
+      if (!next.delete(id)) next.add(id);
+
+      return next;
+    });
+    this.locationsSaved.set(false);
+  }
+
+  saveLocations(): void {
+    this.locationsError.set(null);
+    this.locationsSaved.set(false);
+    this.locationsSaving.set(true);
+    this.locationService.setForEmployee(this.employeeId, [ ...this.selectedLocationIds()]).subscribe({
+      next: () => {
+        this.locationsSaving.set(false);
+        this.locationsSaved.set(true);
+        this.loadTimeline();
+      },
+      error: (err) => {
+        this.locationsSaving.set(false);
+        this.locationsError.set(errorMessage(err));
+      }
+    })
+  }
+
+  linkAccount(): void {
+    const e = this.employee();
+    const email = this.linkEmail.trim();
+    if (!e || !email) return;
+
+    this.linkError.set(null);
+    this.linkSaving.set(true);
+    this.employeeService.linkUser(e.id, email).subscribe({
+      next: (updated) => {
+        this.employee.set(updated);
+        this.linkEmail = '';
+        this.linkSaving.set(false);
+      },
+      error: (err) => {
+        this.linkSaving.set(false);
+        this.linkError.set(errorMessage(err));
+      }
+    })
+  }
+
+  unlinkAccount(): void {
+    const e = this.employee();
+    if (!e || !confirm('Unlink this login? The person will no longer be able to clock in until it is linked again.')) return;
+
+    this.linkError.set(null);
+    this.linkSaving.set(true);
+    this.employeeService.unlinkUser(e.id).subscribe({
+      next: (updated) => {
+        this.employee.set(updated);
+        this.linkSaving.set(false);
+      },
+      error: (err) => {
+        this.linkSaving.set(false);
+        this.linkError.set(errorMessage(err));
       }
     })
   }

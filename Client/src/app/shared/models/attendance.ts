@@ -58,7 +58,7 @@ export interface AttendanceRecord {
     clockInLocationName: string | null;
     clockInDistanceMeters: number | null;
     clockInAccuracyMeters: number | null;
-    clockInLatidute: number | null;
+    clockInLatitude: number | null;
     clockInLongitude: number | null;
     clockOutUtc: string | null;
     clockOutLocationName: string | null;
@@ -136,4 +136,56 @@ export interface PagedResult<T> {
     total: number;
     page: number;
     pageSize: number;
+}
+
+export const WORK_LOCATION_TYPE_LABELS: Record<WorkLocationType, string> = {
+    [WorkLocationType.Office]: 'Office',
+    [WorkLocationType.Branch]: 'Branch',
+    [WorkLocationType.ClientSite]: 'Client site',
+    [WorkLocationType.Remote]: 'Remote',
+    [WorkLocationType.Temporary]: 'Temporary'
+}
+
+export interface WorkLocation {
+    id: string;
+    name: string;
+    type: WorkLocationType;
+    latitude: number | null;
+    longitude: number | null;
+    radiusMeters: number | null;
+    branchId: string | null;
+    branchName: string | null;
+    validFrom: string | null;
+    validTo: string | null;
+    isActive: boolean;
+    createdAtUtc: string;
+}
+
+export interface WorkLocationFormValue {
+    name: string;
+    type: WorkLocationType;
+    latitude: number | null;
+    longitude: number | null;
+    radiusMeters: number | null;
+    branchId: string | null;
+    validFrom: string | null;
+    validTo: string | null;
+    isActive?: boolean;
+}
+
+export interface WorkScheduleFormValue {
+    name: string;
+    startTime: string;
+    endTime: string;
+    workingDays: number;
+    isActive?: boolean;
+}
+
+export interface AttendanceQuery {
+    from: string;
+    to: string;
+    employeeId?: string;
+    needsReview?: boolean;
+    page?: number;
+    pageSize?: number;
 }

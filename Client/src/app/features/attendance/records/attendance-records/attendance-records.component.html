@@ -1,0 +1,159 @@
+<div class="max-w-6xl">
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">Attendance records</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Everyone's clock-ins and clock-outs. By default, only records that need a second look.</p>
+    </div>
+    @if (permissions.can(P.attendance.approve)) {
+      <button (click)="openCorrect()" class="flex items-center gap-2 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-sm font-medium px-3.5 py-2 rounded-md shrink-0">
+        <i class="fa-solid fa-pen-to-square text-xs"></i> Add correction
+      </button>
+    }
+  </div>
+
+  <div class="flex flex-wrap items-end gap-3 mb-4">
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">From</span>
+      <input type="date" [ngModel]="filters.from" (ngModelChange)="update('from', $event)" name="from"
+        class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+    </label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">To</span>
+      <input type="date" [ngModel]="filters.to" (ngModelChange)="update('to', $event)" name="to"
+        class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+    </label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Employee</span>
+      <select [ngModel]="filters.employeeId" (ngModelChange)="update('employeeId', $event)" name="employeeId"
+        class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 min-w-[200px]">
+        <option value="">Everyone</option>
+        @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.firstName }} {{ e.lastName }}</option> }
+      </select>
+    </label>
+    <label class="flex items-center gap-2 text-sm font-medium pb-2">
+      <input type="checkbox" [ngModel]="filters.needsReview" (ngModelChange)="update('needsReview', $event)" name="needsReview" />
+      Needs review only
+    </label>
+  </div>
+
+  @if (loadError()) {
+    <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4"><i class="fa-solid fa-circle-exclamation text-xs"></i> {{ loadError() }}</div>
+  }
+
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto">
+    <table class="w-full text-sm min-w-[860px]">
+      <thead>
+        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Employee</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Date</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">In</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Out</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Worked</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Location</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Needs a look</th>
+          <th class="px-4 py-2.5"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        @for (r of result()?.items ?? []; track r.id) {
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 align-top">
+            <td class="px-4 py-3">
+              <div class="font-medium">{{ r.employeeName }}</div>
+              <div class="font-mono text-xs text-slate-400">{{ r.employeeNumber }}</div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">{{ r.date | date:'EEE, MMM d' }}</td>
+            <td class="px-4 py-3 whitespace-nowrap">{{ r.clockInUtc | date:'h:mm a' }}</td>
+            <td class="px-4 py-3 whitespace-nowrap">
+              @if (r.clockOutUtc) { {{ r.clockOutUtc | date:'h:mm a' }} } @else { <span class="text-slate-400">Open</span> }
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ formatMinutes(r.workedMinutes) }}</td>
+            <td class="px-4 py-3 text-slate-500 dark:text-slate-400">
+              <div>{{ r.clockInLocationName ?? '—' }}
+                @if (r.clockInDistanceMeters !== null) { <span class="text-xs text-slate-400">· {{ round(r.clockInDistanceMeters) }} m</span> }
+              </div>
+              @if (r.clockOutLocationName && r.clockOutLocationName !== r.clockInLocationName) {
+                <div class="text-xs text-slate-400">Out: {{ r.clockOutLocationName }}</div>
+              }
+            </td>
+            <td class="px-4 py-3">
+              <div class="flex flex-wrap gap-1">
+                @if (isStale(r)) {
+                  <span class="text-[11px] font-medium px-1.5 py-0.5 rounded bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">Missing clock-out</span>
+                }
+                @for (f of describeFlags(r.flags); track f.label) {
+                  <span class="text-[11px] font-medium px-1.5 py-0.5 rounded" [class]="toneClass(f.tone)">{{ f.label }}</span>
+                }
+              </div>
+              @if (r.clockInLatitude !== null && r.clockInLongitude !== null) {
+                <a [href]="mapUrl(r.clockInLatitude, r.clockInLongitude)" target="_blank" rel="noopener noreferrer"
+                   class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline block mt-1">Clock-in point <span class="text-slate-400">(±{{ round(r.clockInAccuracyMeters ?? 0) }} m)</span></a>
+              }
+              @if (r.clockOutLatitude !== null && r.clockOutLongitude !== null) {
+                <a [href]="mapUrl(r.clockOutLatitude, r.clockOutLongitude)" target="_blank" rel="noopener noreferrer"
+                   class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline block mt-0.5">Clock-out point <span class="text-slate-400">(±{{ round(r.clockOutAccuracyMeters ?? 0) }} m)</span></a>
+              }
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              @if (permissions.can(P.attendance.approve)) {
+                <button (click)="openCorrect(r)" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">Correct</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="8" class="px-4 py-10 text-center text-slate-400 text-sm">
+            @if (loading()) { Loading… }
+            @else if (filters.needsReview) { Nothing needs review in this range. }
+            @else { No attendance records in this range. }
+          </td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <div class="flex items-center justify-between mt-4 text-sm">
+      <span class="text-slate-500 dark:text-slate-400">Page {{ page() }} of {{ totalPages() }} · {{ result()?.total }} total</span>
+      <div class="flex gap-2">
+        <button (click)="goTo(page() - 1)" [disabled]="page() <= 1" class="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 disabled:opacity-40">Previous</button>
+        <button (click)="goTo(page() + 1)" [disabled]="page() >= totalPages()" class="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 disabled:opacity-40">Next</button>
+      </div>
+    </div>
+  }
+</div>
+
+@if (correctOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="correctOpen.set(false)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5 max-h-[90vh] overflow-y-auto">
+    <h2 class="font-semibold text-sm mb-1">Correct attendance</h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Applied right away and recorded on the employee's timeline. You can't correct your own attendance. Leave a time blank to keep the recorded one.</p>
+    @if (correctError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ correctError() }}</div> }
+    <div class="space-y-3">
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Employee</span>
+        <select [(ngModel)]="correctForm.employeeId" name="correctEmployee"
+          class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40">
+          <option value="" disabled>Select an employee</option>
+          @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.firstName }} {{ e.lastName }} ({{ e.employeeNumber }})</option> }
+        </select>
+      </label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Date</span>
+        <input type="date" [(ngModel)]="correctForm.date" name="correctDate"
+          class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Clock in</span>
+          <input type="time" [(ngModel)]="correctForm.clockIn" name="correctIn"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Clock out</span>
+          <input type="time" [(ngModel)]="correctForm.clockOut" name="correctOut"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </label>
+      </div>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Reason</span>
+        <textarea rows="3" [(ngModel)]="correctForm.reason" name="correctReason" maxlength="500"
+          class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"></textarea>
+      </label>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="correctOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="submitCorrect()" [disabled]="correctSaving()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">{{ correctSaving() ? 'Saving…' : 'Apply correction' }}</button>
+    </div>
+  </div>
+}

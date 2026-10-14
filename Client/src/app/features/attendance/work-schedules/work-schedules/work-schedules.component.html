@@ -1,0 +1,116 @@
+<div class="max-w-4xl">
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">Work schedules</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Named working hours you can assign to employees.</p>
+    </div>
+    @if (permissions.can(P.workSchedules.write)) {
+      <button (click)="openCreate()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3.5 py-2 rounded-md shrink-0">
+        <i class="fa-solid fa-plus text-xs"></i> New schedule
+      </button>
+    }
+  </div>
+
+  @if (loadError()) {
+    <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4">
+      <i class="fa-solid fa-circle-exclamation text-xs"></i> {{ loadError() }}
+    </div>
+  }
+  @if (actionError()) {
+    <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4">
+      <i class="fa-solid fa-circle-exclamation text-xs"></i> {{ actionError() }}
+    </div>
+  }
+
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto">
+    <table class="w-full text-sm min-w-[640px]">
+      <thead>
+        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Name</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Hours</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Days</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Status</th>
+          <th class="px-4 py-2.5"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        @for (s of schedules(); track s.id) {
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+            <td class="px-4 py-3 font-medium">{{ s.name }}</td>
+            <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ formatTimeOnly(s.startTime) }} – {{ formatTimeOnly(s.endTime) }}</td>
+            <td class="px-4 py-3">
+              <div class="flex gap-1">
+                @for (d of dayOptions; track d.value) {
+                  <span class="text-[11px] font-medium w-9 text-center py-0.5 rounded" [class]="dayChipClass(isDay(s.workingDays, d.value))">{{ d.label }}</span>
+                }
+              </div>
+            </td>
+            <td class="px-4 py-3">
+              @if (s.isActive) {
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"><span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Active</span>
+              } @else {
+                <span class="inline-flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Inactive</span>
+              }
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              @if (permissions.can(P.workSchedules.write)) {
+                <button (click)="openEdit(s)" class="p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800"><i class="fa-solid fa-pen text-xs"></i></button>
+              }
+              @if (permissions.can(P.workSchedules.delete)) {
+                <button (click)="remove(s)" class="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"><i class="fa-solid fa-trash text-xs"></i></button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="px-4 py-10 text-center text-slate-400 text-sm">@if (loading()) { Loading… } @else { No work schedules yet. }</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (drawerOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="closeDrawer()"></div>
+  <aside class="fixed top-0 right-0 bottom-0 w-full sm:w-[420px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 z-50 flex flex-col">
+    <header class="flex items-center justify-between px-5 h-14 border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <h2 class="font-semibold text-sm">{{ editing() ? 'Edit schedule' : 'New schedule' }}</h2>
+      <button (click)="closeDrawer()" class="p-1.5 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="flex-1 overflow-y-auto p-5 space-y-4">
+      @if (formError()) {
+        <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5"><i class="fa-solid fa-circle-exclamation text-xs"></i>{{ formError() }}</div>
+      }
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Name</span>
+        <input [(ngModel)]="form.name" name="name" maxlength="100" placeholder="e.g. Standard 9-6"
+          class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500" />
+      </label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Start</span>
+          <input type="time" [(ngModel)]="form.startTime" name="startTime"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">End</span>
+          <input type="time" [(ngModel)]="form.endTime" name="endTime"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </label>
+      </div>
+      <div>
+        <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-2">Working days</span>
+        <div class="flex gap-1.5">
+          @for (d of dayOptions; track d.value) {
+            <button type="button" (click)="toggleDay(d.value)"
+              class="w-11 h-9 rounded-md text-xs font-semibold border transition-colors"
+              [class]="dayButtonClass(isDay(form.workingDays, d.value))">{{ d.label }}</button>
+          }
+        </div>
+      </div>
+      @if (editing()) {
+        <label class="flex items-center gap-2 text-sm font-medium"><input type="checkbox" [(ngModel)]="form.isActive" name="isActive" /> Active</label>
+      }
+    </div>
+    <footer class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
+      <button type="button" (click)="closeDrawer()" class="px-3.5 py-2 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">Cancel</button>
+      <button (click)="save()" [disabled]="saving()" class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save schedule' }}</button>
+    </footer>
+  </aside>
+}

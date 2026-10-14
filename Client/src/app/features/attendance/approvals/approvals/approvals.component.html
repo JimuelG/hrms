@@ -1,0 +1,141 @@
+<div class="max-w-4xl">
+  <div class="mb-6">
+    <h1 class="text-xl font-semibold tracking-tight">Approvals</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Review attendance corrections and overtime requests.</p>
+  </div>
+
+  <div class="flex gap-1 border-b border-slate-200 dark:border-slate-800 mb-4">
+    @for (t of [{ key: 'corrections', label: 'Corrections', count: pendingCorrections() }, { key: 'overtime', label: 'Overtime', count: pendingOvertime() }]; track t.key) {
+      <button (click)="setKind($any(t.key))"
+        class="px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-2"
+        [class.border-indigo-600]="kind() === t.key" [class.text-indigo-600]="kind() === t.key" [class.dark:text-indigo-400]="kind() === t.key"
+        [class.border-transparent]="kind() !== t.key" [class.text-slate-500]="kind() !== t.key" [class.dark:text-slate-400]="kind() !== t.key">
+        {{ t.label }}
+        @if (t.count > 0) {
+          <span class="text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-400">{{ t.count }}</span>
+        }
+      </button>
+    }
+  </div>
+
+  <div class="flex flex-wrap gap-1.5 mb-4">
+    @for (f of statusFilters; track f.label) {
+      <button (click)="setStatus(f.value)"
+        class="text-xs font-medium px-2.5 py-1 rounded-full border transition-colors"
+        [class.bg-indigo-600]="statusFilter() === f.value" [class.text-white]="statusFilter() === f.value" [class.border-indigo-600]="statusFilter() === f.value"
+        [class.border-slate-200]="statusFilter() !== f.value" [class.dark:border-slate-700]="statusFilter() !== f.value"
+        [class.text-slate-600]="statusFilter() !== f.value" [class.dark:text-slate-300]="statusFilter() !== f.value">
+        {{ f.label }}
+      </button>
+    }
+  </div>
+
+  @if (loadError()) {
+    <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4"><i class="fa-solid fa-circle-exclamation text-xs"></i> {{ loadError() }}</div>
+  }
+
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800">
+    @if (kind() === 'corrections') {
+      @for (c of correctionPage()?.items ?? []; track c.id) {
+        <div class="p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-sm font-medium flex flex-wrap items-center gap-2">
+              {{ c.employeeName }} <span class="font-mono text-xs text-slate-400">{{ c.employeeNumber }}</span>
+              <span class="text-[11px] font-medium px-1.5 py-0.5 rounded" [class]="statusClass(c.status)">{{ statusLabel[c.status] }}</span>
+              @if (c.enteredByApprover) { <span class="text-[11px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Entered by approver</span> }
+            </div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {{ c.date | date:'EEE, MMM d, y' }}:
+              @if (c.requestedClockIn) { clock in {{ formatTimeOnly(c.requestedClockIn) }} }
+              @if (c.requestedClockIn && c.requestedClockOut) { · }
+              @if (c.requestedClockOut) { clock out {{ formatTimeOnly(c.requestedClockOut) }} }
+            </div>
+            <div class="text-xs text-slate-400 mt-1">{{ c.reason }}</div>
+            @if (c.reviewNote) { <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Review note: {{ c.reviewNote }}</div> }
+          </div>
+          @if (c.status === APPROVAL.Pending) {
+            <div class="flex gap-2 shrink-0">
+              <button (click)="openReview({ kind: 'correction', action: 'approve', item: c })" class="text-xs font-medium px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white">Approve</button>
+              <button (click)="openReview({ kind: 'correction', action: 'reject', item: c })" class="text-xs font-medium px-3 py-1.5 rounded border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950">Reject</button>
+            </div>
+          }
+        </div>
+      } @empty {
+        <p class="text-sm text-slate-400 text-center py-10">@if (loading()) { Loading… } @else { No correction requests here. }</p>
+      }
+    } @else {
+      @for (o of overtimePage()?.items ?? []; track o.id) {
+        <div class="p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-sm font-medium flex flex-wrap items-center gap-2">
+              {{ o.employeeName }} <span class="font-mono text-xs text-slate-400">{{ o.employeeNumber }}</span>
+              <span class="text-[11px] font-medium px-1.5 py-0.5 rounded" [class]="statusClass(o.status)">{{ statusLabel[o.status] }}</span>
+            </div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {{ o.date | date:'EEE, MMM d, y' }}: {{ formatTimeOnly(o.startTime) }} – {{ formatTimeOnly(o.endTime) }} · {{ formatMinutes(o.requestedMinutes) }} requested
+              @if (o.status === APPROVAL.Approved && o.approvedMinutes !== null) { · {{ formatMinutes(o.approvedMinutes) }} approved }
+            </div>
+            <div class="text-xs text-slate-400 mt-1">{{ o.reason }}</div>
+            @if (o.reviewNote) { <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Review note: {{ o.reviewNote }}</div> }
+          </div>
+          @if (o.status === APPROVAL.Pending) {
+            <div class="flex gap-2 shrink-0">
+              <button (click)="openReview({ kind: 'overtime', action: 'approve', item: o })" class="text-xs font-medium px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-700 text-white">Approve</button>
+              <button (click)="openReview({ kind: 'overtime', action: 'reject', item: o })" class="text-xs font-medium px-3 py-1.5 rounded border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950">Reject</button>
+            </div>
+          }
+        </div>
+      } @empty {
+        <p class="text-sm text-slate-400 text-center py-10">@if (loading()) { Loading… } @else { No overtime requests here. }</p>
+      }
+    }
+  </div>
+
+  @if (totalPages() > 1) {
+    <div class="flex items-center justify-between mt-4 text-sm">
+      <span class="text-slate-500 dark:text-slate-400">Page {{ page() }} of {{ totalPages() }} · {{ total() }} total</span>
+      <div class="flex gap-2">
+        <button (click)="goTo(page() - 1)" [disabled]="page() <= 1" class="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 disabled:opacity-40">Previous</button>
+        <button (click)="goTo(page() + 1)" [disabled]="page() >= totalPages()" class="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 disabled:opacity-40">Next</button>
+      </div>
+    </div>
+  }
+</div>
+
+@if (review(); as r) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="review.set(null)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5 max-h-[90vh] overflow-y-auto">
+    <h2 class="font-semibold text-sm mb-1">
+      {{ r.action === 'approve' ? 'Approve' : 'Reject' }} {{ r.kind === 'correction' ? 'correction' : 'overtime' }} request
+    </h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">{{ r.item.employeeName }} · {{ r.item.date | date:'MMM d, y' }}</p>
+
+    @if (reviewError()) {
+      <div class="flex items-start gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm rounded-md px-3 py-2.5 mb-3">
+        <i class="fa-solid fa-circle-exclamation text-xs mt-1"></i> {{ reviewError() }}
+      </div>
+    }
+
+    <div class="space-y-3">
+      @if (r.kind === 'overtime' && r.action === 'approve') {
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Minutes to approve (requested: {{ r.item.requestedMinutes }})</span>
+          <input type="number" min="1" [max]="r.item.requestedMinutes" [(ngModel)]="reviewMinutes" name="reviewMinutes"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </label>
+      }
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">{{ r.action === 'reject' ? 'Reason (required)' : 'Note (optional)' }}</span>
+        <textarea rows="3" [(ngModel)]="reviewNote" name="reviewNote" maxlength="500"
+          class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"></textarea>
+      </label>
+    </div>
+
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="review.set(null)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="submitReview()" [disabled]="reviewSaving()"
+        class="px-3 py-1.5 rounded-md text-sm font-medium text-white disabled:opacity-60"
+        [class.bg-emerald-600]="r.action === 'approve'" [class.bg-red-600]="r.action === 'reject'">
+        {{ reviewSaving() ? 'Saving…' : (r.action === 'approve' ? 'Approve' : 'Reject') }}
+      </button>
+    </div>
+  </div>
+}
