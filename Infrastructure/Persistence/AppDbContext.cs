@@ -53,6 +53,9 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<AttendanceRecord> AttendanceRecords => Set<AttendanceRecord>();
     public DbSet<AttendanceCorrectionRequest> AttendanceCorrectionRequests => Set<AttendanceCorrectionRequest>();
     public DbSet<OvertimeRequest> OvertimeRequests => Set<OvertimeRequest>();
+    public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
+    public DbSet<Holiday> Holidays => Set<Holiday>();
+    public DbSet<LeaveBalanceEntry> LeaveBalanceEntries => Set<LeaveBalanceEntry>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

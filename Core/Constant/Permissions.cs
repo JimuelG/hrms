@@ -97,6 +97,12 @@ public static class Permissions
         public const string Approve = "attendance.approve";
     }
 
+    public static class Leave
+    {
+        public const string Request = "leave.request";
+        public const string Manage = "leave.manage";
+    }
+
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
         (Employees.Read, "Employees", "View employee records"),
@@ -137,5 +143,8 @@ public static class Permissions
         (Attendance.Clock, "Attendance", "Clock in and out for yourself"),
         (Attendance.Read, "Attendance", "View attendance for all employees"),
         (Attendance.Approve, "Attendance", "Review attendance corrections and overtime requests"),
+        (Leave.Request, "Leave", "Request leave and view leave types and holidays"),
+        (Leave.Manage, "Leave", "Configure leave types, holidays and balances"),
+        
     ];
 }

@@ -2,6 +2,7 @@ using Application.Features.Attendance;
 using Application.Features.Branches;
 using Application.Features.Departments;
 using Application.Features.Employees;
+using Application.Features.Leave;
 using Application.Features.Onboarding;
 using Application.Features.Positions;
 using Application.Features.Recruitment;
@@ -36,6 +37,9 @@ public static class DependencyInjection
         services.AddScoped<ITimeZoneResolver, EmployeeTimeZoneResolver>();
         services.AddScoped<IAttendanceCorrectionService, AttendanceCorrectionService>();
         services.AddScoped<IOvertimeService, OvertimeService>();
+        services.AddScoped<ILeaveTypeService, LeaveTypeService>();
+        services.AddScoped<IHolidayService, HolidayService>();
+        services.AddScoped<ILeaveCalculationService, LeaveCalculationService>();
 
         return services;
     }

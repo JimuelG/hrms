@@ -98,6 +98,7 @@ export class EmployeeDetailComponent implements OnInit {
     this.loadContacts();
     this.loadDocuments();
     this.loadTimeline();
+    void this.loadLocations();
   }
 
   setTab(t: Tab): void {

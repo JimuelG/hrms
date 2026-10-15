@@ -149,6 +149,51 @@ public static class DevDataSeeder
             await db.SaveChangesAsync();
         }
 
+        async Task EnsureLeaveTypes(Tenant t)
+        {
+            tenantInit.SetTenant(t.Id);
+            if (await db.LeaveTypes.AnyAsync(x => x.TenantId == t.Id)) return;
+
+            db.LeaveTypes.AddRange(
+                new LeaveType { Code = "VL", Name = "Vacation Leave", EntitlementMode = LeaveEntitlementMode.Annual,
+                    DefaultDays = 15, ProrateFirstYear = true, MaxCarryOverDays = 5 },
+                new LeaveType { Code = "SL", Name = "Sick Leave", EntitlementMode = LeaveEntitlementMode.Annual,
+                    DefaultDays = 10, ProrateFirstYear = true, RequiresDocumentAfterDays = 2 },
+                new LeaveType { Code = "SIL", Name = "Service Incentive Leave", EntitlementMode = LeaveEntitlementMode.Annual,
+                    Description = "Statutory minimum after one year of service. Inactive by default: a company that already grants 5 or more vacation days usually satisfies it, so turning both on would double-grant.",
+                    DefaultDays = 5, ProrateFirstYear = false, MinServiceMonths = 12, IsActive = false },
+                new LeaveType { Code = "ML", Name = "Maternity Leave", EntitlementMode = LeaveEntitlementMode.HrGranted,
+                    Description = "Granted by HR to employees who qualify.", DefaultDays = 105, AllowsHalfDay = false },
+                new LeaveType { Code = "PL", Name = "Paternity Leave", EntitlementMode = LeaveEntitlementMode.HrGranted,
+                    Description = "Granted by HR to employees who qualify.", DefaultDays = 7, AllowsHalfDay = false },
+                new LeaveType { Code = "SPL", Name = "Solo Parent Leave", EntitlementMode = LeaveEntitlementMode.HrGranted,
+                    Description = "Granted by HR to employees who qualify.", DefaultDays = 7, AllowsHalfDay = false },
+                new LeaveType { Code = "UL", Name = "Unpaid Leave", IsPaid = false, EntitlementMode = LeaveEntitlementMode.Unlimited });
+            await db.SaveChangesAsync();
+        }
+
+        async Task EnsureHolidays(Tenant t)
+        {
+            tenantInit.SetTenant(t.Id);
+            if (await db.Holidays.AnyAsync(x => x.TenantId == t.Id)) return;
+
+            var fixedDays = new (int Month, int Day, string Name)[]
+            {
+                (1, 1, "New Year's Day"), (5, 1, "Labor Day"), (6, 12, "Independence Day"),
+                (11, 30, "Bonifacio Day"), (12, 25, "Christmas Day"), (12, 30, "Rizal Day")
+            };
+            var year = DateTime.UtcNow.Year;
+            foreach (var y in new[] { year, year + 1 })
+                foreach (var (month, day, name) in fixedDays)
+                    db.Holidays.Add(new Holiday { Date = new DateOnly(y, month, day), Name = name, Type = HolidayType.Public });
+            await db.SaveChangesAsync();
+        }
+
+        await EnsureLeaveTypes(acme);
+        await EnsureLeaveTypes(globex);
+        await EnsureHolidays(acme);
+        await EnsureHolidays(globex);
+
         await EnsureWorkLocations(acme);
         await EnsureWorkLocations(globex);
 
@@ -202,6 +247,8 @@ public static class DevDataSeeder
            Permissions.WorkLocations.Write,
            Permissions.WorkLocations.Delete,
            Permissions.Attendance.Clock,
+           Permissions.Leave.Request,
+           Permissions.Leave.Manage,
         ], assignTo:acmeAdmin);
 
         var multiUser = await users.FindByEmailAsync("multi@hrms.test")
@@ -233,6 +280,9 @@ public static class DevDataSeeder
             Permissions.WorkLocations.Read,
             Permissions.WorkLocations.Write,
             Permissions.WorkLocations.Delete,
+            Permissions.Attendance.Clock,
+            Permissions.Leave.Request,
+            Permissions.Leave.Manage,
         ], assignTo: multiUser);
     }
 
