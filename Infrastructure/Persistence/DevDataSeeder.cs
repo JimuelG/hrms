@@ -81,6 +81,7 @@ public static class DevDataSeeder
         var acmeAdmin = await EnsureUser("admin@acme.test", false, acme);
         await EnsureUser("multi@hrms.test", false, acme, globex);
         await EnsureUser("platform@hrms.test", true);
+        var acmeHr = await EnsureUser("hr@acme.test", false, acme);
 
         var existingCodes = await db.Permissions.Select(p => p.Code).ToListAsync();
         var missing = Permissions.All().Where(p => !existingCodes.Contains(p.Code)).ToList();
@@ -200,7 +201,10 @@ public static class DevDataSeeder
         var acmeEmployeeUser = await EnsureUser("employee@acme.test", false, acme);
 
         await EnsureTenantRole(db, tenantInit, acme, "Employee", isSystemRole: true,
-            [Permissions.Attendance.Clock], assignTo: acmeEmployeeUser);
+        [
+            Permissions.Attendance.Clock,
+            Permissions.Leave.Request
+        ], assignTo: acmeEmployeeUser);
 
         await EnsureOnboardingTemplates(acme);
         await EnsureOnboardingTemplates(globex);
@@ -249,6 +253,8 @@ public static class DevDataSeeder
            Permissions.Attendance.Clock,
            Permissions.Leave.Request,
            Permissions.Leave.Manage,
+           Permissions.Leave.Approve,
+           
         ], assignTo:acmeAdmin);
 
         var multiUser = await users.FindByEmailAsync("multi@hrms.test")
@@ -284,6 +290,13 @@ public static class DevDataSeeder
             Permissions.Leave.Request,
             Permissions.Leave.Manage,
         ], assignTo: multiUser);
+
+        await EnsureTenantRole(db, tenantInit, acme, "Leave Approver", isSystemRole: true,
+        [
+            Permissions.Leave.Approve,
+            Permissions.Leave.Request,
+            Permissions.Attendance.Clock    
+        ], assignTo: acmeHr);
     }
 
     private static async Task EnsureTenantRole(

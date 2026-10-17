@@ -56,6 +56,11 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<LeaveType> LeaveTypes => Set<LeaveType>();
     public DbSet<Holiday> Holidays => Set<Holiday>();
     public DbSet<LeaveBalanceEntry> LeaveBalanceEntries => Set<LeaveBalanceEntry>();
+    public DbSet<ApprovalRequest> ApprovalRequests => Set<ApprovalRequest>();
+    public DbSet<ApprovalStep> ApprovalSteps => Set<ApprovalStep>();
+    public DbSet<ApprovalEvent> ApprovalEvents => Set<ApprovalEvent>();
+    public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
+    public DbSet<LeaveRequestAttachment> LeaveRequestAttachments => Set<LeaveRequestAttachment>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

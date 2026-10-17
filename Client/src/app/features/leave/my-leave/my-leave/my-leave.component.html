@@ -1,0 +1,280 @@
+<div class="max-w-4xl">
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">My leave</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Your balances, requests and supporting documents.</p>
+    </div>
+    @if (!loadError()) {
+      <button (click)="openForm()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3.5 py-2 rounded-md shrink-0">
+        <i class="fa-solid fa-plus text-xs"></i> Request leave
+      </button>
+    }
+  </div>
+
+  @if (loading()) {
+    <p class="text-sm text-slate-400">Loading…</p>
+  } @else if (loadError()) {
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-8 text-center">
+      <i class="fa-solid fa-user-slash text-slate-300 dark:text-slate-600 text-2xl mb-3"></i>
+      <p class="text-sm text-slate-600 dark:text-slate-300">{{ loadError() }}</p>
+    </div>
+  } @else {
+    @if (actionNotice()) {
+      <div class="flex items-start justify-between gap-3 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-sm rounded-md px-3 py-2.5 mb-4">
+        <span><i class="fa-solid fa-circle-check text-xs mr-1.5"></i>{{ actionNotice() }}</span>
+        <button (click)="actionNotice.set(null)" class="text-xs underline shrink-0">Dismiss</button>
+      </div>
+    }
+    @if (actionError()) {
+      <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4">
+        <i class="fa-solid fa-circle-exclamation text-xs"></i> {{ actionError() }}
+      </div>
+    }
+
+    <div class="flex gap-1 border-b border-slate-200 dark:border-slate-800 mb-4">
+      @for (t of [{ key: 'balances', label: 'Balances' }, { key: 'requests', label: 'My requests' }]; track t.key) {
+        <button (click)="tab.set($any(t.key))"
+          class="px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors"
+          [class.border-indigo-600]="tab() === t.key" [class.text-indigo-600]="tab() === t.key" [class.dark:text-indigo-400]="tab() === t.key"
+          [class.border-transparent]="tab() !== t.key" [class.text-slate-500]="tab() !== t.key" [class.dark:text-slate-400]="tab() !== t.key">
+          {{ t.label }}
+        </button>
+      }
+    </div>
+
+    <!-- Balances -->
+    @if (tab() === 'balances') {
+      <div class="flex items-center gap-2 mb-4">
+        <button (click)="changeYear(-1)" class="p-1.5 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+        <span class="text-sm font-medium w-14 text-center">{{ year() }}</span>
+        <button (click)="changeYear(1)" class="p-1.5 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+      </div>
+
+      <div class="grid sm:grid-cols-2 gap-3">
+        @for (b of balances()?.items ?? []; track b.leaveTypeId) {
+          <button (click)="openLedger(b)" class="text-left bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors">
+            <div class="flex items-center justify-between">
+              <div class="text-sm font-medium">{{ b.name }}</div>
+              <span class="text-[11px] font-mono text-slate-400">{{ b.code }}</span>
+            </div>
+            <div class="mt-2 text-3xl font-semibold tracking-tight tabular-nums">{{ b.balance }}<span class="text-sm font-normal text-slate-400"> days left</span></div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">
+              {{ b.granted }} granted
+              @if (b.carriedOver > 0) { · {{ b.carriedOver }} carried over }
+              @if (b.adjusted !== 0) { · {{ b.adjusted > 0 ? '+' : '' }}{{ b.adjusted }} adjusted }
+              · {{ b.used }} used
+            </div>
+            @if (!b.isEligible && b.eligibleFrom) {
+              <div class="text-xs text-amber-700 dark:text-amber-400 mt-2">Available from {{ shortDate(b.eligibleFrom) }}</div>
+            }
+          </button>
+        } @empty {
+          <p class="text-sm text-slate-400 sm:col-span-2 text-center py-10">No leave balances for {{ year() }}.</p>
+        }
+      </div>
+    }
+
+    <!-- Requests -->
+    @if (tab() === 'requests') {
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800">
+        @for (r of requests(); track r.id) {
+          <div class="p-4 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div class="min-w-0">
+              <div class="text-sm font-medium flex flex-wrap items-center gap-2">
+                {{ r.leaveTypeName }}
+                <span class="text-[11px] font-medium px-1.5 py-0.5 rounded" [class]="statusClass($any(r.status))">{{ statusLabel[(r.status)] }}</span>
+                @if (!r.isPaid) { <span class="text-[11px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">Unpaid</span> }
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {{ shortDate(r.startDate) }}@if (r.startDate !== r.endDate) { to {{ shortDate(r.endDate) }} }
+                · {{ formatDays(r.days) }}
+                @if (portionLabel(r.startPortion)) { · first day {{ portionLabel(r.startPortion) }} }
+                @if (r.startDate !== r.endDate && portionLabel(r.endPortion)) { · last day {{ portionLabel(r.endPortion) }} }
+              </div>
+              <div class="text-xs text-slate-400 mt-1">{{ r.reason }}</div>
+              @if (r.status === APPROVAL.Pending && r.currentStepLabel) {
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Waiting for: {{ r.currentStepLabel }}</div>
+              }
+              @if (r.documentRequired && r.attachmentCount === 0 && r.status === APPROVAL.Pending) {
+                <div class="text-xs text-amber-700 dark:text-amber-400 mt-1"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i> A supporting document is required. Attach it before approval.</div>
+              }
+              @if (r.cancellationReason) { <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">Cancelled: {{ r.cancellationReason }}</div> }
+            </div>
+            <div class="flex gap-2 shrink-0">
+              <button (click)="openDocs(r)" class="text-xs font-medium px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">
+                <i class="fa-solid fa-paperclip text-[10px]"></i> Documents ({{ r.attachmentCount }})
+              </button>
+              @if (canCancel(r)) {
+                <button (click)="cancel(r)" class="text-xs font-medium px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950">
+                  {{ r.status === APPROVAL.Pending ? 'Withdraw' : 'Cancel' }}
+                </button>
+              }
+            </div>
+          </div>
+        } @empty {
+          <p class="text-sm text-slate-400 text-center py-10">You haven't requested any leave yet.</p>
+        }
+      </div>
+    }
+  }
+</div>
+
+<!-- Ledger drawer -->
+@if (ledgerFor(); as b) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="ledgerFor.set(null)"></div>
+  <aside class="fixed top-0 right-0 bottom-0 w-full sm:w-[440px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 z-50 flex flex-col">
+    <header class="flex items-center justify-between px-5 h-14 border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <h2 class="font-semibold text-sm">{{ b.name }} · {{ b.year }}</h2>
+      <button (click)="ledgerFor.set(null)" class="p-1.5 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="flex-1 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
+      @for (e of ledger(); track e.id) {
+        <div class="px-5 py-3 flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <div class="text-sm font-medium">{{ entryLabel[e.entryType] }}</div>
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{{ e.description }}</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">{{ e.createdAtUtc | date:'MMM d, y, h:mm a' }}</div>
+          </div>
+          <div class="text-sm font-semibold tabular-nums shrink-0" [class.text-emerald-600]="e.days > 0" [class.dark:text-emerald-400]="e.days > 0" [class.text-red-600]="e.days < 0" [class.dark:text-red-400]="e.days < 0">
+            {{ e.days > 0 ? '+' : '' }}{{ e.days }}
+          </div>
+        </div>
+      } @empty {
+        <p class="text-sm text-slate-400 text-center py-10">@if (ledgerLoading()) { Loading… } @else { No entries yet. }</p>
+      }
+    </div>
+  </aside>
+}
+
+<!-- Documents drawer -->
+@if (docsFor(); as r) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="docsFor.set(null)"></div>
+  <aside class="fixed top-0 right-0 bottom-0 w-full sm:w-[440px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 z-50 flex flex-col">
+    <header class="flex items-center justify-between px-5 h-14 border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <h2 class="font-semibold text-sm">Documents · {{ r.leaveTypeName }}</h2>
+      <button (click)="docsFor.set(null)" class="p-1.5 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+    <div class="flex-1 overflow-y-auto p-5 space-y-3">
+      @if (docsError()) { <div class="text-red-600 dark:text-red-400 text-sm">{{ docsError() }}</div> }
+
+      @for (d of docs(); track d.id) {
+        <div class="flex items-center justify-between gap-3 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2.5">
+          <div class="min-w-0">
+            <div class="text-sm font-medium truncate">{{ d.fileName }}</div>
+            <div class="text-xs text-slate-400">{{ formatBytes(d.sizeBytes) }} · {{ d.uploadedAtUtc | date:'MMM d, h:mm a' }}</div>
+          </div>
+          <div class="flex gap-1 shrink-0">
+            <button (click)="downloadDoc(d)" class="p-1.5 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:text-slate-200 dark:hover:bg-slate-800"><i class="fa-solid fa-download text-xs"></i></button>
+            @if (r.status === APPROVAL.Pending) {
+              <button (click)="deleteDoc(d)" class="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950"><i class="fa-solid fa-trash text-xs"></i></button>
+            }
+          </div>
+        </div>
+      } @empty {
+        <p class="text-sm text-slate-400 text-center py-6">No documents attached.</p>
+      }
+
+      @if (r.status === APPROVAL.Pending) {
+        <label class="block pt-2">
+          <span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Add a document (PDF, JPEG or PNG, up to 5 MB)</span>
+          <input type="file" accept=".pdf,.jpg,.jpeg,.png" [disabled]="docsBusy()" (change)="uploadDoc($event)"
+            class="text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-slate-100 dark:file:bg-slate-800 file:text-xs file:font-medium w-full" />
+        </label>
+      } @else {
+        <p class="text-xs text-slate-400">Documents can only be changed while a request is pending.</p>
+      }
+    </div>
+  </aside>
+}
+
+<!-- Request modal -->
+@if (formOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="closeForm()"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5 max-h-[90vh] overflow-y-auto">
+    <h2 class="font-semibold text-sm mb-4">Request leave</h2>
+    @if (formError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ formError() }}</div> }
+
+    <div class="space-y-3">
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Leave type</span>
+        <select [(ngModel)]="form.leaveTypeId" (ngModelChange)="onFormChange()" name="type"
+          class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40">
+          <option value="" disabled>Select a type</option>
+          @for (t of types(); track t.id) { <option [value]="t.id">{{ t.name }}</option> }
+        </select>
+      </label>
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">From</span>
+          <input type="date" [(ngModel)]="form.startDate" (ngModelChange)="onStartChange()" name="start"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">To</span>
+          <input type="date" [min]="form.startDate" [(ngModel)]="form.endDate" (ngModelChange)="onEndChange()" name="end"
+            class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+        </label>
+      </div>
+
+      @if (selectedType()?.allowsHalfDay && form.startDate && form.endDate) {
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">{{ form.startDate === form.endDate ? 'Portion' : 'First day' }}</span>
+            <select [(ngModel)]="form.startPortion" (ngModelChange)="onStartChange()" name="sp"
+              class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+              @if (form.startDate === form.endDate) { <option [ngValue]="Portion.Full">Whole day</option><option [ngValue]="Portion.Morning">Morning only</option> }
+              <option [ngValue]="Portion.Afternoon">Afternoon only</option>
+              @if (form.startDate !== form.endDate) { <option [ngValue]="Portion.Full">Whole day</option> }
+            </select>
+          </label>
+          @if (form.startDate !== form.endDate) {
+            <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Last day</span>
+              <select [(ngModel)]="form.endPortion" (ngModelChange)="onEndChange()" name="ep"
+                class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+                <option [ngValue]="Portion.Full">Whole day</option>
+                <option [ngValue]="Portion.Morning">Morning only</option>
+              </select>
+            </label>
+          }
+        </div>
+      }
+
+      <!-- Live preview from the server's own calculator -->
+      <div class="rounded-md bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5 text-sm min-h-[44px]">
+        @if (previewLoading()) {
+          <span class="text-slate-400"><i class="fa-solid fa-spinner fa-spin text-xs"></i> Calculating…</span>
+        } @else if (previewError()) {
+          <span class="text-red-600 dark:text-red-400">{{ previewError() }}</span>
+        } @else if (preview(); as p) {
+          <div class="font-medium">{{ formatDays(p.days) }} of {{ p.isPaid ? 'paid' : 'unpaid' }} leave</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1 space-y-0.5">
+            @for (l of p.lines; track l.date) {
+              @if (l.status === DayStatus.Holiday) { <div>{{ shortDate(l.date) }}: holiday ({{ l.holidayName }}), not counted</div> }
+              @else if (l.status === DayStatus.NonWorkingDay) { <div>{{ shortDate(l.date) }}: day off, not counted</div> }
+            }
+          </div>
+          @if (p.documentRequired) {
+            <div class="text-xs text-amber-700 dark:text-amber-400 mt-1.5"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i> A supporting document is required for a request this long.</div>
+          }
+        } @else {
+          <span class="text-slate-400">Pick a type and dates to see how many days this uses.</span>
+        }
+      </div>
+
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Reason</span>
+        <textarea rows="3" maxlength="500" [(ngModel)]="form.reason" name="reason"
+          class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"></textarea>
+      </label>
+
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">
+        Supporting document {{ preview()?.documentRequired ? '(needed)' : '(optional)' }}</span>
+        <input type="file" accept=".pdf,.jpg,.jpeg,.png" (change)="onFileSelected($event)"
+          class="text-sm file:mr-3 file:px-3 file:py-1.5 file:rounded-md file:border-0 file:bg-slate-100 dark:file:bg-slate-800 file:text-xs file:font-medium w-full" />
+      </label>
+    </div>
+
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="closeForm()" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="submit()" [disabled]="saving()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">
+        {{ saving() ? 'Sending…' : 'Send request' }}
+      </button>
+    </div>
+  </div>
+}

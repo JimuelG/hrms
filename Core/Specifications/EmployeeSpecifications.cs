@@ -73,3 +73,8 @@ public sealed class EmployeeByUserIdSpecification : BaseSpecfication<Employee>
 {
     public EmployeeByUserIdSpecification(Guid userId) : base(e => e.UserId == userId) {}
 }
+
+public sealed class EmployeesByIdsSpecification : BaseSpecfication<Employee>
+{
+    public EmployeesByIdsSpecification(List<Guid> ids) : base(e => ids.Contains(e.Id)) {}
+}

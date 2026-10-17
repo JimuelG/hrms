@@ -25,6 +25,11 @@ import { AttendanceRecordsComponent } from './features/attendance/records/attend
 import { WorkSchedulesComponent } from './features/attendance/work-schedules/work-schedules/work-schedules.component';
 import { WorkLocationsComponent } from './features/attendance/work-locations/work-locations/work-locations.component';
 import { ApprovalsComponent } from './features/attendance/approvals/approvals/approvals.component';
+import { MyLeaveComponent } from './features/leave/my-leave/my-leave/my-leave.component';
+import { LeaveApprovalsComponent } from './features/leave/approvals/leave-approvals/leave-approvals.component';
+import { HrRequestsComponent } from './features/leave/hr-requests/hr-requests/hr-requests.component';
+import { LeaveTypesComponent } from './features/leave/leave-types/leave-types/leave-types.component';
+import { HolidaysComponent } from './features/leave/holidays/holidays/holidays.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent},
@@ -51,6 +56,11 @@ export const routes: Routes = [
             { path: 'attendance/records', component: AttendanceRecordsComponent, canActivate: [permissionGuard(PERMISSIONS.attendance.read)]},
             { path: 'attendance/schedules', component: WorkSchedulesComponent, canActivate: [permissionGuard(PERMISSIONS.workSchedules.read)]},
             { path: 'attendance/locations', component: WorkLocationsComponent, canActivate: [permissionGuard(PERMISSIONS.workLocations.read)]},
+            { path: 'leave', component: MyLeaveComponent, canActivate: [permissionGuard(PERMISSIONS.leave.request)]},
+            { path: 'leave/approvals', component: LeaveApprovalsComponent, canActivate: [permissionGuard(PERMISSIONS.leave.request)]},
+            { path: 'leave/request', component: HrRequestsComponent, canActivate: [permissionGuard(PERMISSIONS.leave.manage)]},
+            { path: 'leave/types', component: LeaveTypesComponent, canActivate: [permissionGuard(PERMISSIONS.leave.manage)]},
+            { path: 'leave/holidays', component: HolidaysComponent, canActivate: [permissionGuard(PERMISSIONS.leave.manage)]},
         ]
     },
     {

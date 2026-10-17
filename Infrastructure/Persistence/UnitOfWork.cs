@@ -1,6 +1,9 @@
 using System.Collections.Concurrent;
+using Core.Common;
 using Core.Entities;
 using Core.Interfaces;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 
 namespace Infrastructure.Persistence;
 public class UnitOfWork(AppDbContext context) : IUnitOfWork
@@ -8,7 +11,20 @@ public class UnitOfWork(AppDbContext context) : IUnitOfWork
     private readonly ConcurrentDictionary<string, object> _repositories = new();
     public async Task<bool> Complete()
     {
-        return await context.SaveChangesAsync() > 0;
+        try
+        {
+            return await context.SaveChangesAsync() > 0;
+        }
+        catch (DbUpdateConcurrencyException ex)
+        {
+            context.ChangeTracker.Clear();
+            throw new ConcurrencyConflictException("The record was changed by someone else.", ex);
+        }
+        catch (DbUpdateException ex) when (ex.InnerException is SqlException { Number: 2601 or 2627 })
+        {
+            context.ChangeTracker.Clear();
+            throw new DuplicateKeyException("A unique constraint rejected the change.", ex);
+        }
     }
     public void Dispose()
     {

@@ -16,4 +16,5 @@ public class LeaveBalanceEntry : BaseEntity, ITenantEntity
     
     public bool IsAutomatic { get; set; }
     public Guid? CreatedByUserId { get; set; }
+    public Guid? LeaveRequestId { get; set; }
 }

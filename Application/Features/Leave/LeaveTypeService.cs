@@ -7,7 +7,11 @@ using Core.Specifications;
 
 namespace Application.Features.Leave;
 
-public class LeaveTypeService(IUnitOfWork unit, IGenericRepository<LeaveType> repo) : ILeaveTypeService
+public class LeaveTypeService(
+    IUnitOfWork unit, 
+    IGenericRepository<LeaveType> repo,
+    IGenericRepository<LeaveBalanceEntry> ledger,
+    IGenericRepository<LeaveRequest> leaveRequests) : ILeaveTypeService
 {
     public async Task<ServiceResult<LeaveTypeDto>> CreateAsync(CreateLeaveTypeDto dto, CancellationToken ct = default)
     {
@@ -29,6 +33,12 @@ public class LeaveTypeService(IUnitOfWork unit, IGenericRepository<LeaveType> re
     {
         var type = await repo.GetByIdAsync(id, ct);
         if (type is null) return ServiceResult<bool>.Fail("Leave type not found.", ServiceErrorType.NotFound);
+
+        if (await ledger.CountAsync(new LeaveEntriesByTypeSpecification(id), ct) > 0)
+            return ServiceResult<bool>.Fail("This leave type has balance history, so it can't be deleted. Deactivate it instead.");
+
+        if (await leaveRequests.CountAsync(new LeaveRequestByTypeSpecification(id), ct) > 0)
+            return ServiceResult<bool>.Fail("This leave type has requests filed against it, so it can't be deleted. Deactivate it instead.");
 
         repo.Remove(type);
         await unit.Complete();

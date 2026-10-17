@@ -9,5 +9,6 @@ export const PERMISSIONS = {
     attendance: { clock: 'attendance.clock', read: 'attendance.read', approve: 'attendance.approve' },
     workSchedules: { read: 'workschedules.read', write: 'workschedules.write', delete: 'workschedules.delete' },
     workLocations: { read: 'worklocations.read', write: 'worklocations.write', delete: 'workschedules.delete'},
-    tenant: { manageSettings: 'tenant.manage_settings'}
+    tenant: { manageSettings: 'tenant.manage_settings'},
+    leave: { request: 'leave.request', manage: 'leave.manage', approve: 'leave.approve' },
 } as const;

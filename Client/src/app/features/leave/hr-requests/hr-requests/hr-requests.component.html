@@ -1,0 +1,88 @@
+<div class="max-w-6xl">
+  <div class="mb-6">
+    <h1 class="text-xl font-semibold tracking-tight">Leave requests</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Everyone's leave. Pending requests are decided in Approvals.</p>
+  </div>
+
+  <div class="flex flex-wrap items-end gap-3 mb-4">
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Status</span>
+      <select [(ngModel)]="filters.status" (ngModelChange)="changed()" name="status"
+        class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+        @for (s of statuses; track s.label) { <option [ngValue]="s.value">{{ s.label }}</option> }
+      </select>
+    </label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Employee</span>
+      <select [(ngModel)]="filters.employeeId" (ngModelChange)="changed()" name="employee"
+        class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none min-w-[200px]">
+        <option value="">Everyone</option>
+        @for (e of employees(); track e.id) { <option [value]="e.id">{{ e.firstName }} {{ e.lastName }}</option> }
+      </select>
+    </label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Leave on or after</span>
+      <input type="date" [(ngModel)]="filters.from" (ngModelChange)="changed()" name="from"
+        class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+    </label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Leave on or before</span>
+      <input type="date" [(ngModel)]="filters.to" (ngModelChange)="changed()" name="to"
+        class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" />
+    </label>
+  </div>
+
+  @if (notice()) {
+    <div class="flex items-start justify-between gap-3 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-sm rounded-md px-3 py-2.5 mb-4">
+      <span>{{ notice() }}</span><button (click)="notice.set(null)" class="text-xs underline shrink-0">Dismiss</button>
+    </div>
+  }
+  @if (loadError() || actionError()) {
+    <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4">
+      <i class="fa-solid fa-circle-exclamation text-xs"></i> {{ loadError() ?? actionError() }}
+    </div>
+  }
+
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto">
+    <table class="w-full text-sm min-w-[820px]">
+      <thead>
+        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Employee</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Type</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Dates</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Days</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Status</th>
+          <th class="px-4 py-2.5"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        @for (r of result()?.items ?? []; track r.id) {
+          <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40 align-top">
+            <td class="px-4 py-3"><div class="font-medium">{{ r.employeeName }}</div><div class="font-mono text-xs text-slate-400">{{ r.employeeNumber }}</div></td>
+            <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ r.leaveTypeName }}@if (!r.isPaid) { <span class="text-xs text-slate-400"> (unpaid)</span> }</td>
+            <td class="px-4 py-3 whitespace-nowrap">{{ shortDate(r.startDate) }}@if (r.startDate !== r.endDate) { to {{ shortDate(r.endDate) }} }</td>
+            <td class="px-4 py-3 whitespace-nowrap text-slate-500 dark:text-slate-400">{{ formatDays(r.days) }}</td>
+            <td class="px-4 py-3">
+              <span class="text-[11px] font-medium px-1.5 py-0.5 rounded" [class]="statusClass(r.status)">{{ statusLabel[r.status] }}</span>
+              @if (r.status === APPROVAL.Pending && r.currentStepLabel) { <div class="text-xs text-slate-400 mt-1">{{ r.currentStepLabel }}</div> }
+              @if (r.cancellationReason) { <div class="text-xs text-slate-400 mt-1">{{ r.cancellationReason }}</div> }
+            </td>
+            <td class="px-4 py-3 text-right whitespace-nowrap">
+              @if (r.status === APPROVAL.Approved) {
+                <button (click)="cancel(r)" class="text-xs font-medium text-red-600 dark:text-red-400 hover:underline">Cancel leave</button>
+              }
+            </td>
+          </tr>
+        } @empty {
+          <tr><td colspan="6" class="px-4 py-10 text-center text-slate-400 text-sm">@if (loading()) { Loading… } @else { No leave requests match. }</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  @if (totalPages() > 1) {
+    <div class="flex items-center justify-between mt-4 text-sm">
+      <span class="text-slate-500 dark:text-slate-400">Page {{ page() }} of {{ totalPages() }} · {{ result()?.total }} total</span>
+      <div class="flex gap-2">
+        <button (click)="goTo(page() - 1)" [disabled]="page() <= 1" class="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 disabled:opacity-40">Previous</button>
+        <button (click)="goTo(page() + 1)" [disabled]="page() >= totalPages()" class="px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 disabled:opacity-40">Next</button>
+      </div>
+    </div>
+  }
+</div>

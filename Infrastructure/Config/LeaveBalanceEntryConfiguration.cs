@@ -14,11 +14,16 @@ public class LeaveBalanceEntryConfiguration : IEntityTypeConfiguration<LeaveBala
 
         builder.HasOne<Employee>().WithMany().HasForeignKey(e => e.EmployeeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<LeaveType>().WithMany().HasForeignKey(e => e.LeaveTypeId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<LeaveRequest>().WithMany().HasForeignKey(e => e.LeaveRequestId).IsRequired(false).OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(e => new { e.EmployeeId, e.LeaveTypeId, e.Year });
 
         builder.HasIndex(e => new { e.EmployeeId, e.LeaveTypeId, e.Year, e.EntryType })
             .IsUnique()
             .HasFilter("[IsAutomatic] = 1");
+
+        builder.HasIndex(e => new { e.LeaveRequestId, e.EntryType })
+            .IsUnique()
+            .HasFilter("[LeaveRequestId] IS NOT NULL");
     }
 }

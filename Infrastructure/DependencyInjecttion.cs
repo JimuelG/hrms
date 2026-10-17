@@ -42,6 +42,8 @@ public static class DependencyInjecttion
 
         services.AddSingleton(TimeProvider.System);
         services.AddScoped<IUserDirectory, UserDirectory>();
+
+        services.AddScoped<IPermissionDirectory, PermissionDirectory>();
         
         services.AddOptions<JwtOptions>()
             .Bind(config.GetSection(JwtOptions.Section))

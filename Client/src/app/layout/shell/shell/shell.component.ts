@@ -52,6 +52,13 @@ export class ShellComponent implements OnInit{
       { label: 'Work schedules', path: '/attendance/schedules', icon: 'fa-calendar-week', permission: P.workSchedules.read },
       { label: 'Work locations', path: '/attendance/locations', icon: 'fa-location-dot', permission: P.workLocations.read }
     ]},
+    { title: 'Leave', items: [
+      { label: 'My leave', path: '/leave', icon: 'fa-umbrella-beach', permission: P.leave.request, exact: true },
+      { label: 'Approvals', path: '/leave/approvals', icon: 'fa-inbox', permission: P.leave.request },
+      { label: 'Leave requests', path: '/leave/requests', icon: 'fa-list-check', permission: P.leave.manage },
+      { label: 'Leave types', path: '/leave/types', icon: 'fa-tags', permission: P.leave.manage },
+      { label: 'Holidays', path: '/leave/holidays', icon: 'fa-calendar-day', permission: P.leave.manage },
+    ]},
     { items: [{ label: 'Settings', path: '/settings', icon: 'fa-gear', permission: P.tenant.manageSettings }] }
   ]
 

@@ -84,3 +84,109 @@ public sealed record LeavePreviewDto(
     bool DocumentRequired,
     bool IsPaid,
     IReadOnlyList<LeaveDayLineDto> Lines);
+
+public sealed record LeaveBalanceDto(
+    Guid LeaveTypeId,
+    string Code,
+    string Name,
+    bool IsPaid,
+    int EntitlementMode,
+    int Year,
+    decimal Granted,
+    decimal CarriedOver,
+    decimal Adjusted,
+    decimal Used,
+    decimal Balance,
+    DateOnly? EligibleFrom,
+    bool IsEligible);
+
+public sealed record LeaveBalancesDto(
+    int Year,
+    DateOnly AsOf,
+    IReadOnlyList<LeaveBalanceDto> Items);
+
+public sealed record LeaveLedgerEntryDto(
+    Guid Id,
+    Guid LeaveTypeId,
+    string LeaveTypeCode,
+    string LeaveTypeName,
+    int Year,
+    int EntryType,
+    decimal Days,
+    string Description,
+    bool IsAutomatic,
+    DateTime CreatedAtUtc);
+
+public sealed class PostLedgerEntryDto
+{
+    [Required]
+    public Guid? EmployeeId { get; init; }
+    [Required]
+    public Guid? LeaveTypeId { get; init; }
+    [Range(2000, 2100)]
+    public int Year { get; init; }
+    public decimal Days { get; init; }
+    [Required, MaxLength(500)]
+    public string Reason { get; init; } = "";
+}
+
+public sealed class CreateLeaveRequestDto
+{
+    [Required]
+    public Guid? LeaveTypeId { get; init; }
+    [Required]
+    public DateOnly? StartDate { get; init; }
+    [Required]
+    public DateOnly? EndDate { get; init; }
+    public int StartPortion { get; init; } = 1;
+    public int EndPortion { get; init; } = 1;
+    [Required, MaxLength(500)]
+    public string Reason { get; init; } = "";
+}
+
+public sealed record LeaveRequestDto(
+    Guid Id,
+    Guid EmployeeId,
+    string EmployeeName,
+    string EmployeeNumber,
+    Guid LeaveTypeId,
+    string LeaveTypeCode,
+    string LeaveTypeName,
+    bool IsPaid,
+    DateOnly StartDate,
+    DateOnly EndDate,
+    int StartPortion,
+    int EndPortion,
+    decimal Days,
+    int LeaveYear,
+    string Reason,
+    int Status,
+    DateTime CreateAtUtc,
+    DateTime? DecidedAtUtc,
+    DateTime? CancelledAtUtc,
+    string? CancellationReason,
+    bool DocumentRequired,
+    int AttachmentCount,
+    Guid? ApprovalRequestId,
+    string? CurrentStepLabel);
+
+public sealed record LeaveFilingRequestDto(LeaveRequestDto Request, IReadOnlyList<string> Notes);
+
+public sealed record LeaveAttachmentDto(
+    Guid Id,
+    string FileName,
+    string ContentType,
+    long SizeBytes,
+    string UploadedByName,
+    DateTime UploadedAtUtc);
+
+public sealed record LeaveAttachmentFile(
+    Stream Content,
+    string ContentType,
+    string FileName);
+
+public sealed class CancelLeaveRequestDto
+{
+    [MaxLength(500)]
+    public string? Reason { get; init; }
+}

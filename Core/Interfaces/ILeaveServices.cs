@@ -28,3 +28,17 @@ public interface ILeaveCalculationService
         Employee employee, LeaveType type, DateOnly start, DateOnly end,
          DayPortion startPortion, DayPortion endPortion, CancellationToken ct = default);
 }
+
+public interface ILeaveBalanceService
+{
+    Task EnsureGrantsAsync(Employee employee, CancellationToken ct = default);
+
+    Task<ServiceResult<LeaveBalancesDto>> GetMineAsync(Guid userId, int? year, CancellationToken ct = default);
+    Task<ServiceResult<LeaveBalancesDto>> GetForEmployeeAsync(Guid employeeId, int? year, CancellationToken ct = default);
+
+    Task<ServiceResult<IReadOnlyList<LeaveLedgerEntryDto>>> GetMyLedgerAsync(Guid userId, int? year, Guid? leaveTypeId, CancellationToken ct = default);
+    Task<ServiceResult<IReadOnlyList<LeaveLedgerEntryDto>>> GetLedgerForEmployeeAsync(Guid employeeId, int? year, Guid? leaveTypeId, CancellationToken ct = default);
+
+    Task<ServiceResult<LeaveBalanceDto>> GrantAsync(Guid actorUserId, PostLedgerEntryDto dto, CancellationToken ct = default);
+    Task<ServiceResult<LeaveBalanceDto>> AdjustAsync(Guid actorUserId, PostLedgerEntryDto dto, CancellationToken ct = default);
+}

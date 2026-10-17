@@ -1,3 +1,4 @@
+using Application.Features.Approvals;
 using Application.Features.Attendance;
 using Application.Features.Branches;
 using Application.Features.Departments;
@@ -40,6 +41,12 @@ public static class DependencyInjection
         services.AddScoped<ILeaveTypeService, LeaveTypeService>();
         services.AddScoped<IHolidayService, HolidayService>();
         services.AddScoped<ILeaveCalculationService, LeaveCalculationService>();
+        services.AddScoped<ILeaveBalanceService, LeaveBalanceService>();
+        services.AddScoped<IApprovalQueryService, ApprovalQueryService>();
+        services.AddScoped<IApprovalWorkFlowService, ApprovalWorkflowService>();
+        services.AddScoped<IApprovalSubjectHandler, LeaveApprovalHandler>();
+        services.AddScoped<ILeaveRequestService, LeaveRequestService>();
+        services.AddScoped<ILeaveAttachmentService, LeaveAttachmentService>();
 
         return services;
     }

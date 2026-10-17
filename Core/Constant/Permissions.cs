@@ -101,6 +101,7 @@ public static class Permissions
     {
         public const string Request = "leave.request";
         public const string Manage = "leave.manage";
+        public const string Approve = "leave.approve";
     }
 
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
@@ -145,6 +146,6 @@ public static class Permissions
         (Attendance.Approve, "Attendance", "Review attendance corrections and overtime requests"),
         (Leave.Request, "Leave", "Request leave and view leave types and holidays"),
         (Leave.Manage, "Leave", "Configure leave types, holidays and balances"),
-        
+        (Leave.Approve, "Leave", "Approve or reject leave requests at the HR step"),
     ];
 }
