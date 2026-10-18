@@ -5,6 +5,7 @@ using Application.Features.Departments;
 using Application.Features.Employees;
 using Application.Features.Leave;
 using Application.Features.Onboarding;
+using Application.Features.Payroll;
 using Application.Features.Positions;
 using Application.Features.Recruitment;
 using Core.DTOs.Attendance;
@@ -47,6 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IApprovalSubjectHandler, LeaveApprovalHandler>();
         services.AddScoped<ILeaveRequestService, LeaveRequestService>();
         services.AddScoped<ILeaveAttachmentService, LeaveAttachmentService>();
+        services.AddScoped<ICompensationService, CompensationService>();
 
         return services;
     }

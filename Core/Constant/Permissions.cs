@@ -104,6 +104,12 @@ public static class Permissions
         public const string Approve = "leave.approve";
     }
 
+    public static class Compensation
+    {
+        public const string Read = "compensation.read";
+        public const string Write = "compensation.write";
+    }
+
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
         (Employees.Read, "Employees", "View employee records"),
@@ -147,5 +153,7 @@ public static class Permissions
         (Leave.Request, "Leave", "Request leave and view leave types and holidays"),
         (Leave.Manage, "Leave", "Configure leave types, holidays and balances"),
         (Leave.Approve, "Leave", "Approve or reject leave requests at the HR step"),
+        (Compensation.Read, "Compensation", "View salary history"),
+        (Compensation.Write, "Compensation", "Set salaries"),
     ];
 }

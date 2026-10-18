@@ -61,6 +61,7 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<ApprovalEvent> ApprovalEvents => Set<ApprovalEvent>();
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<LeaveRequestAttachment> LeaveRequestAttachments => Set<LeaveRequestAttachment>();
+    public DbSet<EmployeeCompensation> EmployeeCompensations => Set<EmployeeCompensation>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -58,7 +58,7 @@ export const routes: Routes = [
             { path: 'attendance/locations', component: WorkLocationsComponent, canActivate: [permissionGuard(PERMISSIONS.workLocations.read)]},
             { path: 'leave', component: MyLeaveComponent, canActivate: [permissionGuard(PERMISSIONS.leave.request)]},
             { path: 'leave/approvals', component: LeaveApprovalsComponent, canActivate: [permissionGuard(PERMISSIONS.leave.request)]},
-            { path: 'leave/request', component: HrRequestsComponent, canActivate: [permissionGuard(PERMISSIONS.leave.manage)]},
+            { path: 'leave/requests', component: HrRequestsComponent, canActivate: [permissionGuard(PERMISSIONS.leave.manage)]},
             { path: 'leave/types', component: LeaveTypesComponent, canActivate: [permissionGuard(PERMISSIONS.leave.manage)]},
             { path: 'leave/holidays', component: HolidaysComponent, canActivate: [permissionGuard(PERMISSIONS.leave.manage)]},
         ]

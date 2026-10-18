@@ -47,7 +47,7 @@ export class LeaveService {
   }
 
   getDocuments(id: string): Observable<LeaveAttachment[]> {
-    return this.http.get<LeaveAttachment[]>(`${this.baseUrl}/request/${id}/documents`);
+    return this.http.get<LeaveAttachment[]>(`${this.baseUrl}/requests/${id}/documents`);
   }
 
   uploadDocument(id: string, file: File): Observable<LeaveAttachment> {
