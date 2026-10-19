@@ -59,6 +59,11 @@ export class ShellComponent implements OnInit{
       { label: 'Leave types', path: '/leave/types', icon: 'fa-tags', permission: P.leave.manage },
       { label: 'Holidays', path: '/leave/holidays', icon: 'fa-calendar-day', permission: P.leave.manage },
     ]},
+    { title: 'Payroll', items: [
+      { label: 'Payroll runs', path: '/payroll/runs', icon: 'fa-money-check-dollar', permission: P.payroll.read },
+      { label: 'Statutory tables', path: '/payroll/rules', icon: 'fa-scale-balanced', permission: P.payroll.readRules },
+      { label: 'Payroll settings', path: '/payroll/settings', icon: 'fa-sliders', permission: P.payroll.manageSettings },
+    ]},
     { items: [{ label: 'Settings', path: '/settings', icon: 'fa-gear', permission: P.tenant.manageSettings }] }
   ]
 

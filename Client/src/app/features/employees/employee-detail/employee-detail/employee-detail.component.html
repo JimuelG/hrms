@@ -103,6 +103,14 @@
             <p class="text-xs text-slate-400 mt-1.5">The login must already exist and belong to this company. Linking lets the person clock in as this employee.</p>
           }
           @if (linkError()) { <div class="text-red-600 dark:text-red-400 text-sm mt-2">{{ linkError() }}</div> }
+
+          @if (permissions.can(P.leave.manage)) {
+            <app-employee-leave-balances [employeeId]="employeeId" />
+          }
+
+          @if (permissions.can(P.compensation.read)) {
+            <app-employee-compensation [employeeId]="employeeId" />
+          }
         </div>
       }
     }

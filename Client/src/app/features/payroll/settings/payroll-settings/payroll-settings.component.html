@@ -1,0 +1,45 @@
+<div class="max-w-2xl">
+  <div class="mb-6">
+    <h1 class="text-xl font-semibold tracking-tight">Payroll settings</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Changes apply to payroll runs started afterward. Existing runs keep the settings they were started with.</p>
+  </div>
+
+  @if (loadError()) { <div class="text-red-600 dark:text-red-400 text-sm">{{ loadError() }}</div> }
+
+  @if (form(); as f) {
+    <div class="bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-xs rounded-md px-3 py-2.5 mb-5">
+      <i class="fa-solid fa-triangle-exclamation"></i> The defaults here are placeholders. Confirm each value with your accountant before running real payroll.
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5 space-y-4">
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Pay frequency</span>
+        <select [ngModel]="f.frequency" (ngModelChange)="patch({ frequency: $event })" name="freq" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+          @for (x of frequencies; track x) { <option [ngValue]="x">{{ frequencyLabel[x] }}</option> }
+        </select>
+        <span class="block text-xs text-slate-400 mt-1">Your withholding tax table must be loaded for the same basis.</span></label>
+
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Contribution deductions</span>
+        <select [ngModel]="f.contributionPolicy" (ngModelChange)="patch({ contributionPolicy: $event })" name="policy" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+          @for (x of policies; track x) { <option [ngValue]="x">{{ policyLabel[x] }}</option> }
+        </select>
+        <span class="block text-xs text-slate-400 mt-1">Only matters for semi-monthly pay.</span></label>
+
+      <div class="grid grid-cols-2 gap-4">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Working days per year (5-day week)</span>
+          <input type="number" min="200" max="366" [ngModel]="f.workingDaysFactorFiveDay" (ngModelChange)="patch({ workingDaysFactorFiveDay: $event })" name="f5" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Working days per year (6-day week)</span>
+          <input type="number" min="200" max="366" [ngModel]="f.workingDaysFactorSixDay" (ngModelChange)="patch({ workingDaysFactorSixDay: $event })" name="f6" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Paid hours per day</span>
+          <input type="number" min="1" max="24" step="0.5" [ngModel]="f.hoursPerDay" (ngModelChange)="patch({ hoursPerDay: $event })" name="hpd" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Overtime multiplier (ordinary day)</span>
+          <input type="number" min="1" max="5" step="0.05" [ngModel]="f.ordinaryOvertimeMultiplier" (ngModelChange)="patch({ ordinaryOvertimeMultiplier: $event })" name="ot" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+      </div>
+
+      @if (saveError()) { <div class="text-red-600 dark:text-red-400 text-sm">{{ saveError() }}</div> }
+      <div class="flex items-center gap-3">
+        <button (click)="save()" [disabled]="saving()" class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save settings' }}</button>
+        @if (saved()) { <span class="text-sm text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-circle-check text-xs"></i> Saved</span> }
+      </div>
+    </div>
+  }
+</div>

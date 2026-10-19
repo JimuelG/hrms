@@ -1,0 +1,49 @@
+<div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+  <div class="flex items-center justify-between mb-3">
+    <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Salary history</div>
+    @if (permissions.can(P.compensation.write)) {
+      <button (click)="openForm()" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"><i class="fa-solid fa-plus text-[10px]"></i> Set salary</button>
+    }
+  </div>
+
+  @if (error()) { <div class="text-red-600 dark:text-red-400 text-sm mb-2">{{ error() }}</div> }
+
+  <div class="space-y-1.5">
+    @for (c of history(); track c.id) {
+      <div class="flex items-start justify-between gap-3 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2">
+        <div class="min-w-0">
+          <div class="text-sm font-medium flex items-center gap-2">
+            <span class="tabular-nums">{{ peso(c.monthlyBasicSalary) }}</span><span class="text-xs font-normal text-slate-400">per month</span>
+            @if (c.isCurrent) { <span class="text-[11px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">Current</span> }
+          </div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">From {{ dateLabel(c.effectiveFrom) }} · set by {{ c.setByName }}</div>
+          <div class="text-xs text-slate-400 mt-0.5">{{ c.reason }}</div>
+        </div>
+      </div>
+    } @empty {
+      <p class="text-sm text-slate-400">@if (loading()) { Loading… } @else { No salary on record. This employee can't be included in payroll until one is set. }</p>
+    }
+  </div>
+  <p class="text-xs text-slate-400 mt-2">Entries can't be edited or removed. A change is a new entry with a later date.</p>
+</div>
+
+@if (formOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="formOpen.set(false)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5">
+    <h2 class="font-semibold text-sm mb-1">Set monthly salary</h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">The new date must be after the latest entry and not before the hire date. Past entries can't be rewritten.</p>
+    @if (formError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ formError() }}</div> }
+    <div class="space-y-3">
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Monthly basic salary</span>
+        <input type="number" min="0" step="0.01" [(ngModel)]="form.monthlyBasicSalary" name="sal" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Takes effect on</span>
+        <input type="date" [(ngModel)]="form.effectiveFrom" name="eff" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Reason</span>
+        <textarea rows="2" maxlength="500" [(ngModel)]="form.reason" name="reason" placeholder="e.g. Annual increase, promotion" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"></textarea></label>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="formOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="save()" [disabled]="saving()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save salary' }}</button>
+    </div>
+  </div>
+}

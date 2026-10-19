@@ -1,0 +1,174 @@
+<div class="max-w-5xl">
+  <a routerLink="/payroll/runs" class="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 mb-4">
+    <i class="fa-solid fa-arrow-left text-xs"></i> Back to payroll runs
+  </a>
+
+  @if (loading() && !detail()) {
+    <p class="text-sm text-slate-400">Loading…</p>
+  } @else if (loadError()) {
+    <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5"><i class="fa-solid fa-circle-exclamation text-xs"></i> {{ loadError() }}</div>
+  } @else if (detail(); as d) {
+    <div class="flex flex-wrap items-start justify-between gap-4 mb-5">
+      <div>
+        <h1 class="text-xl font-semibold tracking-tight flex flex-wrap items-center gap-2">
+          {{ dateLabel(d.run.periodStart) }} to {{ dateLabel(d.run.periodEnd) }}
+          <span class="text-[11px] font-medium px-1.5 py-0.5 rounded" [class]="statusClass(d.run.status)">{{ statusLabel[d.run.status] }}</span>
+        </h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ d.run.employeeCount }} employees</p>
+      </div>
+
+      <div class="flex flex-wrap gap-2">
+        @if (isDraft()) {
+          @if (permissions.can(P.payroll.run)) {
+            <button (click)="recompute()" [disabled]="busy()" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-60">Recompute</button>
+            <button (click)="openDialog('adjust')" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">Add adjustment</button>
+            <button (click)="openDialog('cancel')" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950">Cancel run</button>
+          }
+          @if (permissions.can(P.payroll.approve)) {
+            <button (click)="approve()" [disabled]="busy()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">Approve</button>
+          }
+        }
+        @if (d.run.status === Status.Approved) {
+          @if (permissions.can(P.payroll.approve)) {
+            <button (click)="openDialog('sendback')" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">Send back</button>
+          }
+          @if (permissions.can(P.payroll.finalize)) {
+            <button (click)="finalize()" [disabled]="busy()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-emerald-600 text-white disabled:opacity-60">Finalize</button>
+          }
+        }
+      </div>
+    </div>
+
+    @if (notice()) {
+      <div class="flex items-start justify-between gap-3 bg-emerald-50 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 text-sm rounded-md px-3 py-2.5 mb-4">
+        <span><i class="fa-solid fa-circle-check text-xs mr-1.5"></i>{{ notice() }}</span>
+        <button (click)="notice.set(null)" class="text-xs underline shrink-0">Dismiss</button>
+      </div>
+    }
+    @if (actionError() && !dialog()) {
+      <div class="flex items-start gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4"><i class="fa-solid fa-circle-exclamation text-xs mt-1"></i> {{ actionError() }}</div>
+    }
+    @if (d.run.status === Status.Finalized) {
+      <div class="flex items-start gap-2 bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-300 text-sm rounded-md px-3 py-2.5 mb-4">
+        <i class="fa-solid fa-lock text-xs mt-1"></i> This run is finalized and can't be changed. Fix mistakes with an adjustment in the next run.
+      </div>
+    }
+    @if (withErrors().length > 0) {
+      <div class="bg-red-50 dark:bg-red-950 text-red-700 dark:text-red-300 text-sm rounded-md px-3 py-2.5 mb-4">
+        <div class="font-medium">{{ withErrors().length }} employee(s) couldn't be computed. A run with errors can't be approved.</div>
+        <ul class="mt-1 text-xs space-y-0.5">
+          @for (r of withErrors(); track r.id) { <li>{{ r.employeeName }}: {{ r.errorMessage }}</li> }
+        </ul>
+      </div>
+    }
+
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3"><div class="text-xs text-slate-500 dark:text-slate-400">Gross</div><div class="text-lg font-semibold tabular-nums mt-1">{{ peso(d.run.totalGross) }}</div></div>
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3"><div class="text-xs text-slate-500 dark:text-slate-400">Deductions</div><div class="text-lg font-semibold tabular-nums mt-1">{{ peso(d.run.totalDeductions) }}</div></div>
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3"><div class="text-xs text-slate-500 dark:text-slate-400">Net pay</div><div class="text-lg font-semibold tabular-nums mt-1">{{ peso(d.run.totalNet) }}</div></div>
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3"><div class="text-xs text-slate-500 dark:text-slate-400">Employer contributions</div><div class="text-lg font-semibold tabular-nums mt-1">{{ peso(d.run.totalEmployerContributions) }}</div></div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800">
+      @for (r of d.results; track r.id) {
+        <div>
+          <button (click)="toggle(r)" class="w-full text-left px-4 py-3 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-slate-800/40">
+            <div class="min-w-0">
+              <div class="text-sm font-medium flex flex-wrap items-center gap-2">
+                {{ r.employeeName }} <span class="font-mono text-xs text-slate-400">{{ r.employeeNumber }}</span>
+                @if (r.errorMessage) { <span class="text-[11px] font-medium px-1.5 py-0.5 rounded bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400">Error</span> }
+                @else if (r.warnings.length) { <span class="text-[11px] font-medium px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400">{{ r.warnings.length }} warning(s)</span> }
+              </div>
+              <div class="text-xs text-slate-500 dark:text-slate-400">{{ r.positionTitle }}@if (r.departmentName) { · {{ r.departmentName }} }</div>
+            </div>
+            <div class="text-right shrink-0">
+              <div class="text-sm font-semibold tabular-nums">{{ peso(r.net) }}</div>
+              <div class="text-[11px] text-slate-400 tabular-nums">gross {{ peso(r.gross) }}</div>
+            </div>
+          </button>
+
+          @if (expanded().has(r.id)) {
+            <div class="px-4 pb-4 pt-1 bg-slate-50/60 dark:bg-slate-800/20">
+              @if (r.errorMessage) {
+                <p class="text-sm text-red-600 dark:text-red-400">{{ r.errorMessage }}</p>
+              } @else {
+                <div class="grid sm:grid-cols-2 gap-6 text-sm">
+                  <div>
+                    <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Earnings</div>
+                    @for (l of earnings(r); track $index) { <div class="flex justify-between py-0.5"><span>{{ l.label }}</span><span class="tabular-nums">{{ peso(l.amount) }}</span></div> }
+                    <div class="flex justify-between py-1 mt-1 border-t border-slate-200 dark:border-slate-700 font-medium"><span>Total earnings</span><span class="tabular-nums">{{ peso(r.totalEarnings) }}</span></div>
+                  </div>
+                  <div>
+                    <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Deductions</div>
+                    @for (l of deductions(r); track $index) { <div class="flex justify-between py-0.5"><span>{{ l.label }}</span><span class="tabular-nums">{{ peso(l.amount) }}</span></div> }
+                    @if (deductions(r).length === 0) { <div class="text-slate-400 py-0.5">None</div> }
+                    <div class="flex justify-between py-1 mt-1 border-t border-slate-200 dark:border-slate-700 font-medium"><span>Total deductions</span><span class="tabular-nums">{{ peso(r.totalDeductions) }}</span></div>
+                  </div>
+                </div>
+
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-3 space-y-0.5">
+                  <div>Monthly basic {{ peso(r.monthlyBasic) }} · taxable income {{ peso(r.taxableIncome) }} · employer contributions {{ peso(r.employerContributions) }}</div>
+                  @for (n of r.notes; track $index) { <div>{{ n }}</div> }
+                  @for (w of r.warnings; track $index) { <div class="text-amber-700 dark:text-amber-400"><i class="fa-solid fa-triangle-exclamation text-[10px]"></i> {{ w }}</div> }
+                </div>
+
+                @if (adjustmentsFor(r.employeeId).length > 0 || isDraft()) {
+                  <div class="mt-3">
+                    @for (a of adjustmentsFor(r.employeeId); track a.id) {
+                      <div class="flex items-center justify-between text-xs py-0.5">
+                        <span>Adjustment: {{ a.label }} ({{ a.amount > 0 ? '+' : '' }}{{ peso(a.amount) }})</span>
+                        @if (isDraft() && permissions.can(P.payroll.run)) { <button (click)="removeAdjustment(a)" class="text-red-600 dark:text-red-400 hover:underline">Remove</button> }
+                      </div>
+                    }
+                    @if (isDraft() && permissions.can(P.payroll.run)) {
+                      <button (click)="openDialog('adjust', r.employeeId)" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline mt-1">Add adjustment for {{ r.employeeName }}</button>
+                    }
+                  </div>
+                }
+              }
+            </div>
+          }
+        </div>
+      } @empty {
+        <p class="text-sm text-slate-400 text-center py-10">No employees were included in this run.</p>
+      }
+    </div>
+  }
+</div>
+
+@if (dialog(); as dlg) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="dialog.set(null)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5">
+    <h2 class="font-semibold text-sm mb-1">{{ dlg === 'adjust' ? 'Add adjustment' : dlg === 'sendback' ? 'Send back to draft' : 'Cancel this run' }}</h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+      @if (dlg === 'adjust') { A positive amount adds pay and a negative one deducts it. Adjustments don't change taxable income. The run is recomputed. }
+      @else if (dlg === 'sendback') { The approval is cleared so the run can be changed and approved again. }
+      @else { The period becomes free to start again. This can't be undone. }
+    </p>
+    @if (dialogError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ dialogError() }}</div> }
+
+    @if (dlg === 'adjust') {
+      <div class="space-y-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Employee</span>
+          <select [(ngModel)]="adj.employeeId" name="adjEmp" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+            <option value="" disabled>Select an employee</option>
+            @for (r of detail()?.results ?? []; track r.id) { <option [value]="r.employeeId">{{ r.employeeName }}</option> }
+          </select></label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Label</span>
+          <input [(ngModel)]="adj.label" name="adjLabel" maxlength="100" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Amount</span>
+          <input type="number" step="0.01" [(ngModel)]="adj.amount" name="adjAmt" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+      </div>
+    } @else {
+      <textarea rows="3" maxlength="500" [(ngModel)]="reason" name="reason" placeholder="Reason (required)"
+        class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"></textarea>
+    }
+
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="dialog.set(null)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Back</button>
+      <button (click)="submitDialog()" [disabled]="busy()" class="px-3 py-1.5 rounded-md text-sm font-medium text-white disabled:opacity-60" [class.bg-red-600]="dlg === 'cancel'" [class.bg-indigo-600]="dlg !== 'cancel'">
+        {{ busy() ? 'Saving…' : dlg === 'adjust' ? 'Add' : dlg === 'sendback' ? 'Send back' : 'Cancel run' }}
+      </button>
+    </div>
+  </div>
+}

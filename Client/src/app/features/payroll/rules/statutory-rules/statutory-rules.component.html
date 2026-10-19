@@ -1,0 +1,159 @@
+<div class="max-w-5xl">
+  <div class="mb-6">
+    <h1 class="text-xl font-semibold tracking-tight">Statutory tables</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Contribution and withholding tax tables. Payroll uses the table in force at the end of each pay period.</p>
+  </div>
+
+  <div class="bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-xs rounded-md px-3 py-2.5 mb-5">
+    <i class="fa-solid fa-triangle-exclamation"></i> No rates are built in. Load the current official tables with your accountant, then check them with the calculator below.
+  </div>
+
+  @if (loadError() || actionError()) {
+    <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4"><i class="fa-solid fa-circle-exclamation text-xs"></i> {{ loadError() ?? actionError() }}</div>
+  }
+
+  <div class="space-y-5">
+    @for (k of kinds; track k) {
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg">
+        <header class="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+          <h2 class="text-sm font-semibold">{{ kindLabel[k] }}</h2>
+          @if (permissions.can(P.payroll.manageRules)) {
+            <button (click)="openLoad(k)" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"><i class="fa-solid fa-plus text-[10px]"></i> Load a table</button>
+          }
+        </header>
+
+        <div class="divide-y divide-slate-100 dark:divide-slate-800">
+          @for (r of rulesOf(k); track r.id) {
+            <div class="px-4 py-3">
+              <div class="flex items-center justify-between gap-3">
+                <button (click)="toggle(r.id)" class="text-left min-w-0">
+                  <div class="text-sm font-medium flex flex-wrap items-center gap-2">
+                    Effective {{ dateLabel(r.effectiveFrom) }}
+                    @if (r.isInForce) { <span class="text-[11px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">In force</span> }
+                    @if (r.basis) { <span class="text-[11px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400">{{ frequencyLabel[r.basis] }}</span> }
+                  </div>
+                  <div class="text-xs text-slate-500 dark:text-slate-400">Source: {{ r.source }} · loaded by {{ r.setByName }}</div>
+                </button>
+                @if (permissions.can(P.payroll.manageRules)) {
+                  <button (click)="remove(r)" class="p-1.5 rounded text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950 shrink-0"><i class="fa-solid fa-trash text-xs"></i></button>
+                }
+              </div>
+
+              @if (open().has(r.id)) {
+                @if (r.method === Method.Rate) {
+                  <div class="mt-2 text-xs text-slate-600 dark:text-slate-300 space-y-0.5">
+                    <div>Employee {{ r.employeeRate * 100 }}% · employer {{ r.employerRate * 100 }}%</div>
+                    @if (r.baseFloor !== null) { <div>Minimum base {{ peso(r.baseFloor) }}</div> }
+                    @if (r.baseCeiling !== null) { <div>Maximum base {{ peso(r.baseCeiling) }}</div> }
+                  </div>
+                } @else {
+                  <div class="mt-2 overflow-x-auto">
+                    <table class="w-full text-xs min-w-[520px]">
+                      <thead><tr class="text-slate-500 dark:text-slate-400"><th class="text-left py-1 font-medium">From</th><th class="text-left py-1 font-medium">To (below)</th><th class="text-right py-1 font-medium">Employee</th><th class="text-right py-1 font-medium">Employer</th><th class="text-right py-1 font-medium">Rate on excess</th></tr></thead>
+                      <tbody class="divide-y divide-slate-100 dark:divide-slate-800 tabular-nums">
+                        @for (b of r.brackets; track b.order) {
+                          <tr><td class="py-1">{{ peso(b.from) }}</td><td class="py-1">{{ b.to === null ? 'and above' : peso(b.to) }}</td><td class="py-1 text-right">{{ peso(b.employeeFixed) }}</td><td class="py-1 text-right">{{ peso(b.employerFixed) }}</td><td class="py-1 text-right">{{ b.employeeRateOnExcess * 100 }}%</td></tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+                }
+                @if (r.notes) { <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">{{ r.notes }}</div> }
+              }
+            </div>
+          } @empty {
+            <p class="px-4 py-5 text-sm text-slate-400">@if (loading()) { Loading… } @else { Nothing loaded. Payroll will warn and deduct nothing for this item. }</p>
+          }
+        </div>
+      </section>
+    }
+  </div>
+
+  <!-- Calculator -->
+  <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 mt-6">
+    <h2 class="text-sm font-semibold mb-1">Check the figures</h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-3">Compare these results with the agencies' published examples before relying on a table.</p>
+    <div class="flex flex-wrap items-end gap-3">
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Monthly salary</span>
+        <input type="number" min="0" [(ngModel)]="previewBase" name="pb" class="w-36 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Taxable income</span>
+        <input type="number" min="0" [(ngModel)]="previewTaxable" name="pt" class="w-36 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Tax basis</span>
+        <select [(ngModel)]="previewTaxBasis" name="ptb" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+          @for (x of frequencies; track x) { <option [ngValue]="x">{{ frequencyLabel[x] }}</option> }
+        </select></label>
+      <button (click)="runPreview()" class="px-3.5 py-2 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">Calculate</button>
+    </div>
+    @if (previewError()) { <div class="text-red-600 dark:text-red-400 text-sm mt-3">{{ previewError() }}</div> }
+    @if (preview(); as p) {
+      <table class="w-full text-sm mt-3">
+        <thead><tr class="text-xs text-slate-500 dark:text-slate-400"><th class="text-left py-1 font-medium">Item</th><th class="text-right py-1 font-medium">Employee</th><th class="text-right py-1 font-medium">Employer</th></tr></thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 tabular-nums">
+          @for (l of p.lines; track l.code) {
+            <tr><td class="py-1.5">{{ l.label }}@if (l.note) { <div class="text-xs text-amber-700 dark:text-amber-400">{{ l.note }}</div> }</td><td class="py-1.5 text-right">{{ peso(l.employee) }}</td><td class="py-1.5 text-right">{{ peso(l.employer) }}</td></tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+</div>
+
+@if (drawerOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="drawerOpen.set(false)"></div>
+  <aside class="fixed top-0 right-0 bottom-0 w-full sm:w-[520px] bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 z-50 flex flex-col">
+    <header class="flex items-center justify-between px-5 h-14 border-b border-slate-200 dark:border-slate-800 shrink-0">
+      <h2 class="font-semibold text-sm">Load {{ kindLabel[form.kind] }} table</h2>
+      <button (click)="drawerOpen.set(false)" class="p-1.5 rounded text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"><i class="fa-solid fa-xmark"></i></button>
+    </header>
+
+    <div class="flex-1 overflow-y-auto p-5 space-y-4">
+      @if (formError()) {
+        <div class="flex items-start gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm rounded-md px-3 py-2.5"><i class="fa-solid fa-circle-exclamation text-xs mt-1"></i> {{ formError() }}</div>
+      }
+
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Takes effect on</span>
+          <input type="date" [(ngModel)]="form.effectiveFrom" name="eff" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+        @if (form.kind === Kind.WithholdingTax) {
+          <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Table is for</span>
+            <select [(ngModel)]="form.basis" name="basis" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+              @for (x of frequencies; track x) { <option [ngValue]="x">{{ frequencyLabel[x] }} pay</option> }
+            </select></label>
+        }
+      </div>
+
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Source (required)</span>
+        <input [(ngModel)]="form.source" name="source" maxlength="300" placeholder="e.g. the circular or notice number" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+
+      @if (form.method === Method.Rate) {
+        <div class="grid grid-cols-2 gap-3">
+          <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Employee rate (%)</span>
+            <input type="number" step="0.001" min="0" [(ngModel)]="form.employeeRate" name="er" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+          <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Employer rate (%)</span>
+            <input type="number" step="0.001" min="0" [(ngModel)]="form.employerRate" name="rr" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+          <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Minimum base (optional)</span>
+            <input type="number" min="0" [(ngModel)]="form.baseFloor" name="fl" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+          <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Maximum base (optional)</span>
+            <input type="number" min="0" [(ngModel)]="form.baseCeiling" name="ce" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+        </div>
+      } @else {
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Paste the table</span>
+          <textarea rows="10" [(ngModel)]="form.bracketsCsv" name="csv" spellcheck="false"
+            placeholder="from, to, employee, employer, rate"
+            class="w-full font-mono text-xs border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 outline-none focus:ring-2 focus:ring-indigo-500/40"></textarea>
+          <span class="block text-xs text-slate-400 mt-1.5">
+            Paste straight from Excel, or type it comma-separated. Columns: from, to, employee amount, employer amount, rate on the excess. A blank "to" means no upper limit, and a rate can be 15% or 0.15. A header row is fine.
+            Each row's "to" must equal the next row's "from" (for example 4,750.00, not 4,749.99).
+          </span></label>
+      }
+
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Notes (optional)</span>
+        <textarea rows="2" maxlength="1000" [(ngModel)]="form.notes" name="notes" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none"></textarea></label>
+    </div>
+
+    <footer class="flex justify-end gap-2 px-5 py-4 border-t border-slate-200 dark:border-slate-800 shrink-0">
+      <button (click)="drawerOpen.set(false)" class="px-3.5 py-2 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="save()" [disabled]="saving()" class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">{{ saving() ? 'Checking…' : 'Load table' }}</button>
+    </footer>
+  </aside>
+}

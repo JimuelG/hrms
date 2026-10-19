@@ -109,6 +109,17 @@ public static class Permissions
         public const string Read = "compensation.read";
         public const string Write = "compensation.write";
     }
+    
+    public static class Payroll
+    {
+        public const string ReadRules = "payroll.read_rules";
+        public const string ManageRules = "payroll.manage_rules";
+        public const string Read = "payroll.read";
+        public const string Run = "payroll.run";
+        public const string Approve = "payroll.approve";
+        public const string Finalize = "payroll.finalize";
+        public const string ManageSettings = "payroll.manage_settings";
+    }
 
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
@@ -155,5 +166,12 @@ public static class Permissions
         (Leave.Approve, "Leave", "Approve or reject leave requests at the HR step"),
         (Compensation.Read, "Compensation", "View salary history"),
         (Compensation.Write, "Compensation", "Set salaries"),
+        (Payroll.ReadRules, "Payroll", "View statutory contribution and tax tables"),
+        (Payroll.ManageRules, "Payroll", "Load and change statutory contribution and tax tables"),
+        (Payroll.Read, "Payroll", "View payroll runs and payslip figures"),
+        (Payroll.Run, "Payroll", "Start and recompute payroll runs"),
+        (Payroll.Approve, "Payroll", "Approve or send back payroll runs"),
+        (Payroll.Finalize, "Payroll", "Finalize payroll runs, which locks them permanently"),
+        (Payroll.ManageSettings, "Payroll", "Change payroll settings such as pay frequency"),
     ];
 }

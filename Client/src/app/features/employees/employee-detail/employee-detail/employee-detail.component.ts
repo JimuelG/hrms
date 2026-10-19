@@ -14,6 +14,8 @@ import { PermissionService } from '../../../../core/services/permission.service'
 import { PERMISSIONS } from '../../../../shared/constants/permissions';
 import { WorkLocationService } from '../../../../core/services/work-location.service';
 import { firstValueFrom } from 'rxjs';
+import { EmployeeLeaveBalancesComponent } from '../../employee-leave-balances/employee-leave-balances/employee-leave-balances.component';
+import { EmployeeCompensationComponent } from '../../employee-compensaion/employee-compensation/employee-compensation.component';
 
 type Tab = 'profile' | 'contacts' | 'documents' | 'timeline';
 
@@ -23,7 +25,9 @@ type Tab = 'profile' | 'contacts' | 'documents' | 'timeline';
     CommonModule,
     FormsModule,
     RouterLink,
-    DatePipe
+    DatePipe,
+    EmployeeLeaveBalancesComponent,
+    EmployeeCompensationComponent
   ],
   templateUrl: './employee-detail.component.html',
   styleUrl: './employee-detail.component.scss',

@@ -30,6 +30,10 @@ import { LeaveApprovalsComponent } from './features/leave/approvals/leave-approv
 import { HrRequestsComponent } from './features/leave/hr-requests/hr-requests/hr-requests.component';
 import { LeaveTypesComponent } from './features/leave/leave-types/leave-types/leave-types.component';
 import { HolidaysComponent } from './features/leave/holidays/holidays/holidays.component';
+import { PayrollRunsComponent } from './features/payroll/runs/payroll-runs/payroll-runs.component';
+import { PayrollRunDetailComponent } from './features/payroll/run-detail/payroll-run-detail/payroll-run-detail.component';
+import { PayrollSettingsComponent } from './features/payroll/settings/payroll-settings/payroll-settings.component';
+import { StatutoryRulesComponent } from './features/payroll/rules/statutory-rules/statutory-rules.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent},
@@ -61,6 +65,10 @@ export const routes: Routes = [
             { path: 'leave/requests', component: HrRequestsComponent, canActivate: [permissionGuard(PERMISSIONS.leave.manage)]},
             { path: 'leave/types', component: LeaveTypesComponent, canActivate: [permissionGuard(PERMISSIONS.leave.manage)]},
             { path: 'leave/holidays', component: HolidaysComponent, canActivate: [permissionGuard(PERMISSIONS.leave.manage)]},
+            { path: 'payroll/runs', component: PayrollRunsComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.read)]},
+            { path: 'payroll/runs/:id', component: PayrollRunDetailComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.read)]},
+            { path: 'payroll/rules', component: StatutoryRulesComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.readRules)]},
+            { path: 'payroll/settings', component: PayrollSettingsComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.manageSettings)]},
         ]
     },
     {

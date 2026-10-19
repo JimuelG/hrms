@@ -62,6 +62,12 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<LeaveRequest> LeaveRequests => Set<LeaveRequest>();
     public DbSet<LeaveRequestAttachment> LeaveRequestAttachments => Set<LeaveRequestAttachment>();
     public DbSet<EmployeeCompensation> EmployeeCompensations => Set<EmployeeCompensation>();
+    public DbSet<StatutoryRuleSet> StatutoryRuleSets => Set<StatutoryRuleSet>();
+    public DbSet<StatutoryBracket> StatutoryBrackets => Set<StatutoryBracket>();
+    public DbSet<PayrollSettingsRecord> PayrollSettings => Set<PayrollSettingsRecord>();
+    public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
+    public DbSet<PayrollResultRecord> PayrollResults => Set<PayrollResultRecord>();
+    public DbSet<PayrollAdjustmentRecord> PayrollAdjustments => Set<PayrollAdjustmentRecord>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

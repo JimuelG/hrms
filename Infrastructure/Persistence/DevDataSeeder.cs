@@ -255,7 +255,11 @@ public static class DevDataSeeder
            Permissions.Leave.Manage,
            Permissions.Leave.Approve,
            Permissions.Compensation.Read,
-           Permissions.Compensation.Write
+           Permissions.Compensation.Write,
+           Permissions.Payroll.ReadRules,
+           Permissions.Payroll.ManageRules,
+           Permissions.Payroll.Read,
+           Permissions.Payroll.Run,
            
         ], assignTo:acmeAdmin);
 
@@ -305,7 +309,12 @@ public static class DevDataSeeder
            Permissions.Leave.Manage,
            Permissions.Leave.Approve,
            Permissions.Compensation.Read,
-           Permissions.Compensation.Write
+           Permissions.Compensation.Write,
+           Permissions.Payroll.ReadRules,
+           Permissions.Payroll.ManageRules,
+           Permissions.Payroll.Read,
+           Permissions.Payroll.Run,
+
         ], assignTo: multiUser);
 
         await EnsureTenantRole(db, tenantInit, acme, "Leave Approver", isSystemRole: true,

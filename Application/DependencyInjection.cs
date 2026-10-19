@@ -49,6 +49,8 @@ public static class DependencyInjection
         services.AddScoped<ILeaveRequestService, LeaveRequestService>();
         services.AddScoped<ILeaveAttachmentService, LeaveAttachmentService>();
         services.AddScoped<ICompensationService, CompensationService>();
+        services.AddScoped<IStatutoryService, StatutoryService>();
+        services.AddScoped<IPayrollRunService, PayrollRunService>();
 
         return services;
     }

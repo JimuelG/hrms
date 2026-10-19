@@ -1,0 +1,70 @@
+<div class="max-w-5xl">
+  <div class="flex items-start justify-between mb-6 gap-4">
+    <div>
+      <h1 class="text-xl font-semibold tracking-tight">Payroll runs</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">One run per pay period. Review, approve, then finalize.</p>
+    </div>
+    @if (permissions.can(P.payroll.run)) {
+      <button (click)="openStart()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3.5 py-2 rounded-md shrink-0">
+        <i class="fa-solid fa-plus text-xs"></i> Start a run
+      </button>
+    }
+  </div>
+
+  @if (loadError()) {
+    <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4"><i class="fa-solid fa-circle-exclamation text-xs"></i> {{ loadError() }}</div>
+  }
+
+  <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto">
+    <table class="w-full text-sm min-w-[760px]">
+      <thead>
+        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Period</th>
+          <th class="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Status</th>
+          <th class="text-right font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Employees</th>
+          <th class="text-right font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Gross</th>
+          <th class="text-right font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs">Net</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+        @for (r of runs(); track r.id) {
+          <tr (click)="open(r)" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
+            <td class="px-4 py-3 font-medium whitespace-nowrap">{{ dateLabel(r.periodStart) }} to {{ dateLabel(r.periodEnd) }}</td>
+            <td class="px-4 py-3"><span class="text-[11px] font-medium px-1.5 py-0.5 rounded" [class]="statusClass(r.status)">{{ statusLabel[r.status] }}</span></td>
+            <td class="px-4 py-3 text-right tabular-nums">
+              {{ r.employeeCount }}
+              @if (r.errorCount > 0) { <span class="text-xs text-red-600 dark:text-red-400"> · {{ r.errorCount }} with errors</span> }
+            </td>
+            <td class="px-4 py-3 text-right tabular-nums text-slate-500 dark:text-slate-400">{{ peso(r.totalGross) }}</td>
+            <td class="px-4 py-3 text-right tabular-nums font-medium">{{ peso(r.totalNet) }}</td>
+          </tr>
+        } @empty {
+          <tr><td colspan="5" class="px-4 py-10 text-center text-slate-400 text-sm">@if (loading()) { Loading… } @else { No payroll runs yet. }</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+@if (startOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="startOpen.set(false)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5">
+    <h2 class="font-semibold text-sm mb-1">Start a payroll run</h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">The period must match your pay frequency. It's computed right away, and you can review it before anyone approves it.</p>
+    @if (startError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ startError() }}</div> }
+    <div class="space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">From</span>
+          <input type="date" [(ngModel)]="start.periodStart" name="ps" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">To</span>
+          <input type="date" [(ngModel)]="start.periodEnd" name="pe" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+      </div>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Notes (optional)</span>
+        <textarea rows="2" maxlength="1000" [(ngModel)]="start.notes" name="notes" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40"></textarea></label>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="startOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="submitStart()" [disabled]="starting()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">{{ starting() ? 'Computing…' : 'Start run' }}</button>
+    </div>
+  </div>
+}
