@@ -72,7 +72,10 @@ public sealed class EmployeesForPayrollSpecification : BaseSpecfication<Employee
 {
     private static readonly EmployeeStatus[] NotYetEmloyed = [EmployeeStatus.Applicant, EmployeeStatus.PreOnboarding];
 
-    public EmployeesForPayrollSpecification(DateOnly periodEnd) : base(e => e.HireDate <= periodEnd && !NotYetEmloyed.Contains(e.Status))
+    public EmployeesForPayrollSpecification(DateOnly periodStart, DateOnly periodEnd) 
+        : base(e => e.HireDate <= periodEnd 
+            && !NotYetEmloyed.Contains(e.Status)
+            && (e.LastWorkingDay == null || e.LastWorkingDay >= periodStart))
     {
         AddInclude(e => e.Department);
         AddInclude(e => e.Position);
@@ -91,6 +94,12 @@ public sealed class ApprovedUnpaidLeaveSpecification : BaseSpecfication<LeaveReq
         : base(r => r.Status == ApprovalStatus.Approved && !r.IsPaid && r.StartDate <= to && r.EndDate >= from) {}
 }
 
+public sealed class ApprovedLeaveSpecification : BaseSpecfication<LeaveRequest>
+{
+    public ApprovedLeaveSpecification(DateOnly from, DateOnly to)
+        : base(r => r.Status == ApprovalStatus.Approved && r.StartDate <= to && r.EndDate >= from) { }
+}
+
 public sealed class ApprovedOvertimeInRangeSpecification : BaseSpecfication<OvertimeRequest>
 {
     public ApprovedOvertimeInRangeSpecification(DateOnly from, DateOnly to)
@@ -100,4 +109,50 @@ public sealed class ApprovedOvertimeInRangeSpecification : BaseSpecfication<Over
 public sealed class PayrollAdjustmentByIdSpecification : BaseSpecfication<PayrollAdjustmentRecord>
 {
     public PayrollAdjustmentByIdSpecification(Guid id, Guid runId) : base(a => a.Id == id && a.PayrollRunId == runId) { }
+}
+
+public sealed class PayrollResultsByEmployeeSpecification : BaseSpecfication<PayrollResultRecord>
+{
+    public PayrollResultsByEmployeeSpecification(Guid employeeId)
+        : base(r => r.EmployeeId == employeeId && r.ErrorMessage == null && r.Run.Status == PayrollRunStatus.Finalized)
+    {
+        AddInclude(r => r.Run);
+        AddOrderByDescending(r => r.Run.PeriodStart);
+    }
+}
+
+public sealed class PayrollResultByRunAndEmployeeSpecification : BaseSpecfication<PayrollResultRecord>
+{
+    public PayrollResultByRunAndEmployeeSpecification(Guid runId, Guid employeeId)
+        : base(r => r.PayrollRunId == runId && r.EmployeeId == employeeId)
+    {
+        AddInclude(r => r.Run);
+    }
+}
+
+public sealed class RecurringItemsByEmployeeSpecification : BaseSpecfication<RecurringPayrollItem>
+{
+    public RecurringItemsByEmployeeSpecification(Guid employeeId) : base(i => i.EmployeeId == employeeId)
+    {
+        AddOrderByDescending(i => i.From);
+    }
+}
+
+public sealed class ActiveRecurringItemsInPeriodSpecification : BaseSpecfication<RecurringPayrollItem>
+{
+    public ActiveRecurringItemsInPeriodSpecification(DateOnly from, DateOnly to)
+        : base(i => i.IsActive && i.From <= to && (i.To == null || i.To >= from))
+    {
+        
+    }
+}
+
+public sealed class RecurringItemsByIdsSpecification : BaseSpecfication<RecurringPayrollItem>
+{
+    public RecurringItemsByIdsSpecification(List<Guid> ids) : base(i => ids.Contains(i.Id)) {}
+}
+
+public sealed class LoanApplicationsByRunSpecification : BaseSpecfication<PayrollLoanApplication>
+{
+    public LoanApplicationsByRunSpecification(Guid runId) : base(a => a.PayrollRunId == runId) { }
 }

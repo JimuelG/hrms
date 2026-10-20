@@ -119,6 +119,7 @@ public static class Permissions
         public const string Approve = "payroll.approve";
         public const string Finalize = "payroll.finalize";
         public const string ManageSettings = "payroll.manage_settings";
+        public const string ViewOwn = "payroll.view_own";
     }
 
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
@@ -173,5 +174,6 @@ public static class Permissions
         (Payroll.Approve, "Payroll", "Approve or send back payroll runs"),
         (Payroll.Finalize, "Payroll", "Finalize payroll runs, which locks them permanently"),
         (Payroll.ManageSettings, "Payroll", "Change payroll settings such as pay frequency"),
+        (Payroll.ViewOwn, "Payroll", "View your own finalized payslips"),
     ];
 }

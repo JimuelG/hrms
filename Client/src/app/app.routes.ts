@@ -34,6 +34,8 @@ import { PayrollRunsComponent } from './features/payroll/runs/payroll-runs/payro
 import { PayrollRunDetailComponent } from './features/payroll/run-detail/payroll-run-detail/payroll-run-detail.component';
 import { PayrollSettingsComponent } from './features/payroll/settings/payroll-settings/payroll-settings.component';
 import { StatutoryRulesComponent } from './features/payroll/rules/statutory-rules/statutory-rules.component';
+import { MyPayslipsComponent } from './features/payroll/my-payslips/my-payslips/my-payslips.component';
+import { RunPayslipComponent } from './features/payroll/run-payslip/run-payslip/run-payslip.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent},
@@ -69,6 +71,8 @@ export const routes: Routes = [
             { path: 'payroll/runs/:id', component: PayrollRunDetailComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.read)]},
             { path: 'payroll/rules', component: StatutoryRulesComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.readRules)]},
             { path: 'payroll/settings', component: PayrollSettingsComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.manageSettings)]},
+            { path: 'payslips', component: MyPayslipsComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.viewOwn)]},
+            { path: 'payslips/runs/:runId/payslip/:employeeId', component: RunPayslipComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.read)]},
         ]
     },
     {

@@ -57,7 +57,7 @@ export class LeaveService {
   }
 
   downloadDocument(id: string, attachmentId: string): Observable<Blob> {
-    return this.http.get(`${this.baseUrl}/requests/${id}/docuements/${attachmentId}`, { responseType: 'blob'});
+    return this.http.get(`${this.baseUrl}/requests/${id}/documents/${attachmentId}`, { responseType: 'blob'});
   }
 
   deleteDocument(id: string, attachmentId: string): Observable<void> {

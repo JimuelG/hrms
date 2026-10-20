@@ -21,8 +21,14 @@ public class PayrollRunService(
     IGenericRepository<LeaveType> leaveTypes,
     IGenericRepository<OvertimeRequest> overtime,
     IGenericRepository<PayrollAdjustmentRecord> adjustmentRepo,
+    IGenericRepository<Holiday> holidays,
+    IGenericRepository<AttendanceRecord> attendance,
+    IGenericRepository<RecurringPayrollItem> recurring,
+    IGenericRepository<PayrollLoanApplication> loanApplications,
+    IGenericRepository<LoanRepayment> loanRayments,
     ILeaveCalculationService leaveCalculation,
     IStatutoryService statutory,
+    ITimeZoneResolver zones,
     TimeProvider clock) : IPayrollRunService
 {
     public async Task<ServiceResult<PayrollRunDetailDto>> GetAsync(Guid id, CancellationToken ct = default)
@@ -51,6 +57,8 @@ public class PayrollRunService(
             return ServiceResult<PayrollRunDetailDto>.Fail("Only a draft run can be recomputed.", ServiceErrorType.Conflict);
 
         results.RemoveRange(await results.ListAsync(new PayrollResultsByRunSpecification(run.Id), ct));
+        loanApplications.RemoveRange(await loanApplications.ListAsync(new LoanApplicationsByRunSpecification(run.Id), ct));
+
         await ComputeIntoAsync(run, ct);
 
         run.LastActivityAtUtc = clock.GetUtcNow().UtcDateTime;
@@ -79,12 +87,15 @@ public class PayrollRunService(
             Frequency = settings.Frequency,
             ContributionPolicy = settings.ContributionPolicy,
             WorkingDaysFactorFiveDay = settings.WorkingDaysFactorFiveDay,
-            WorkingDaysFactorySixDay = settings.WorkingDaysFactorSixDay,
+            WorkingDaysFactorSixDay = settings.WorkingDaysFactorSixDay,
             HoursPerDay = settings.HoursPerDay,
-            OrdinaryOvertimeMultiplier = settings.OrdinaryOvertimeMultiplier,
             Notes = string.IsNullOrWhiteSpace(dto.Notes) ? null : dto.Notes.Trim(),
+            OrdinaryOvertimeMultiplier = settings.OrdinaryOvertimeMultiplier,
+            RestDayOvertimeMultiplier = settings.RestDayOvertimeMultiplier,
+            HolidayOvertimeMultiplier = settings.HolidayOvertimeMultiplier,
             CreatedByUserId = actorUserId,
-            LastActivityAtUtc = clock.GetUtcNow().UtcDateTime
+            LastActivityAtUtc = clock.GetUtcNow().UtcDateTime,
+            PartialMonthContribution = settings.PartialMonthContribution,
         };
 
         runs.Add(run);
@@ -101,7 +112,7 @@ public class PayrollRunService(
         var period = run.Period;
         var options = new PayrollOptions(settings, run.ContributionPolicy);
 
-        var people = await employees.ListAsync(new EmployeesForPayrollSpecification(period.End), ct);
+        var people = await employees.ListAsync(new EmployeesForPayrollSpecification(period.Start, period.End), ct);
         var ids = people.Select(p => p.Id).ToList();
 
         var history = (await compensation.ListAsync(new CompensationForEmployeesSpecification(ids), ct))
@@ -113,12 +124,28 @@ public class PayrollRunService(
         var adjustments = (await runs.GetEntityWithSpec(new PayrollRunByIdSpecification(run.Id, withAdjustments: true), ct))?.Adjustments ?? run.Adjustments;
 
         var adjustmentsByEmployee = adjustments.GroupBy(a => a.EmployeeId)
-            .ToDictionary(g => g.Key, g => (IReadOnlyList<PayrollAdjustment>)g.Select(a => new PayrollAdjustment(a.Label, a.Amount)).ToList());
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<PayrollAdjustment>)g.Select(a => new PayrollAdjustment(a.Label, a.Amount, a.Tax)).ToList());
 
         var unpaidLeave = await leaveRequests.ListAsync(new ApprovedUnpaidLeaveSpecification(period.Start, period.End), ct);
         var types = (await leaveTypes.ListAsync(new LeaveTypeSearchSpecification(null, activeOnly: false), ct)).ToDictionary(t => t.Id);
-        var otMinutes = (await overtime.ListAsync(new ApprovedOvertimeInRangeSpecification(period.Start, period.End), ct))
-            .GroupBy(o => o.EmployeeId).ToDictionary(g => g.Key, g => g.Sum(o => o.ApprovedMinutes ?? 0));
+
+        var holidayDates = (await holidays.ListAsync(new HolidaysInRangeSpecification(period.Start, period.End), ct)).Select(h => h.Date).ToHashSet();
+
+        var overtimeRows = (await overtime.ListAsync(new ApprovedOvertimeInRangeSpecification(period.Start, period.End), ct))
+            .GroupBy(o => o.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.ToList());
+
+        var attendanceRows = (await attendance.ListAsync(new AttendanceInPeriodSpecification(period.Start, period.End), ct))
+            .GroupBy(a => a.EmployeeId)
+            .ToDictionary(g => g.Key, g => g.ToDictionary(a => a.Date));
+
+        var leaveByEmployee = settings.AttendanceDeductionsEnabled
+            ? (await leaveRequests.ListAsync(new ApprovedLeaveSpecification(period.Start, period.End), ct))
+                .GroupBy(r => r.EmployeeId).ToDictionary(g => g.Key, g => g.ToList())
+            : new Dictionary<Guid, List<LeaveRequest>>();
+
+        var rulesByEmployee = (await recurring.ListAsync(new ActiveRecurringItemsInPeriodSpecification(period.Start, period.End), ct))
+            .GroupBy(r => r.EmployeeId).ToDictionary(g => g.Key, g => g.ToList());
 
         var companyDays = (await tenantSettings.GetEntityWithSpec(new TenantSettingsSpecification(), ct))?.WorkingDays ?? new TenantSettings().WorkingDays;
 
@@ -142,11 +169,95 @@ public class PayrollRunService(
             var perWeek = LeaveInPeriod.WorkingDaysPerWeek(workingDays);
 
             history.TryGetValue(person.Id, out var personHistory);
-            var minutes = otMinutes.GetValueOrDefault(person.Id);
 
-            var gross = new GrossInput(personHistory ?? [], person.HireDate, null, period, perWeek, unpaidDays, minutes);
+            var zone = ResolveZone(await zones.ResolveAsync(person, ct));
+            var theirAttendance = attendanceRows.GetValueOrDefault(person.Id);
 
-            var composed = PayrollComposer.Compose(new PayrollEmployeeInput(gross, adjustmentsByEmployee.GetValueOrDefault(person.Id) ?? []), options, rules);
+            var items = new List<(OvertimeDayType, int)>();
+            var checks = new List<string>();
+            foreach (var ot in overtimeRows.GetValueOrDefault(person.Id) ?? [])
+            {
+                items.Add((OvertimeClassifier.Classify(ot.Date, workingDays, holidayDates), ot.ApprovedMinutes ?? 0));
+
+                AttendanceRecord? rec = null;
+                var has = theirAttendance?.TryGetValue(ot.Date, out rec) == true;
+                TimeOnly? outLocal = has && rec!.ClockOutUtc is DateTime o
+                    ? TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(o, DateTimeKind.Utc), zone))
+                    : null;
+
+                var flag = OvertimeAttendanceCheck.Check(ot.Date, ot.EndTime, has, outLocal);
+                if (flag is not null) checks.Add(flag);
+            }
+
+            AttendanceDeductionInput? attendanceInput = null;
+            if (settings.AttendanceDeductionsEnabled)
+            {
+                var window = PayPeriodCalculator.EmployedWindow(period, person.HireDate, person.LastWorkingDay);
+                var days = theirAttendance ?? new Dictionary<DateOnly, AttendanceRecord>();
+                var flags = new List<string>();
+                int late = 0, under = 0;
+
+                foreach (var rec in days.Values.Where(r => window is not null && r.Date >= window.Value.Start && r.Date <= window.Value.End))
+                {
+                    if (rec.ScheduledStart is not TimeOnly start || rec.ScheduledEnd is not TimeOnly end) continue;
+
+                    late += AttendanceDeductionRules.LateMinutes(start, TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(rec.ClockInUtc, DateTimeKind.Utc), zone)),
+                    settings.AttendanceGraceMinutes);
+
+                    if (rec.ClockOutUtc is DateTime outUtc)
+                        under += AttendanceDeductionRules.UndertimeMinutes(end, TimeOnly.FromDateTime(TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(outUtc, DateTimeKind.Utc), zone)),
+                        settings.AttendanceGraceMinutes);
+                    else
+                        flags.Add($"{rec.Date:MMM d} has no clock-out, so undertime wasn't deducted for that day.");
+                }
+
+                var leaveDates = window is null
+                    ? new HashSet<DateOnly>()
+                    : await LeaveDatesAsync(person, leaveByEmployee.GetValueOrDefault(person.Id) ?? [], types, period, ct);
+
+                var absent = window is null ? 0 : AttendanceDeductionRules.AbsentDates(window.Value.Start, window.Value.End, workingDays, days.Keys.ToHashSet(), leaveDates, holidayDates).Count;
+
+                attendanceInput = new AttendanceDeductionInput(true, settings.AttendanceGraceMinutes, absent, late, under, flags);
+            }
+
+            var personAdjustments = new List<PayrollAdjustment>(adjustmentsByEmployee.GetValueOrDefault(person.Id) ?? []);
+            var loansApplied = new List<PayrollLoanApplication>();
+
+            foreach (var rule in rulesByEmployee.GetValueOrDefault(person.Id) ?? [])
+            {
+                if (!RecurringRules.Applies(rule.From, rule.To, rule.IsActive, period)) continue;
+
+                var amount = rule.Amount;
+                if (rule.TotalOwed is decimal owed)
+                {
+                    var instalment = RecurringRules.LoanInstalment(rule.Amount, new LoanState(owed, rule.PaidSoFar));
+                    if (instalment <= 0m) continue;
+                    amount = -instalment;
+                    loansApplied.Add(new PayrollLoanApplication
+                    {
+                        PayrollRunId = run.Id,
+                        RecurringPayrollItemId = rule.Id,
+                        Amount = instalment
+                    });
+                }
+
+                personAdjustments.Add(new PayrollAdjustment(rule.Label, amount, rule.Tax));
+            }
+
+            var gross = new GrossInput(personHistory ?? [], person.HireDate, person.LastWorkingDay, period, perWeek, unpaidDays, OvertimeClassifier.Bucket(items));
+
+            var separatedWithoutDate = person.LastWorkingDay is null
+                && person.Status is EmployeeStatus.Resigned or EmployeeStatus.Terminated;
+
+            var composed = separatedWithoutDate
+                ? PayrollComposer.Failure("This employee is marked as separated but has no last working day. Set it on their profile.")
+                : PayrollComposer.Compose(new PayrollEmployeeInput(gross, adjustmentsByEmployee.GetValueOrDefault(person.Id) ?? []), options, rules);
+
+            if (composed.Error is null && checks.Count > 0)
+                composed = composed with { Warnings = composed.Warnings.Concat(checks).ToList() };
+
+            if (composed.Error is null)
+                foreach (var a in loansApplied) loanApplications.Add(a);
 
             results.Add(ToRecord(run, person, composed, gross));
         }
@@ -182,8 +293,8 @@ public class PayrollRunService(
         record.NotesJson = ResultSnapshot.Write(r.Notes);
         record.WarningsJson = ResultSnapshot.Write(r.Warnings);
         record.InputsJson = ResultSnapshot.Write(new ResultSnapshot.InputsSnapshot(
-            input.UnpaindLeaveDays,
-            input.ApprovedOvertimeMinutes,
+            input.UnpaidLeaveDays,
+            input.Overtime.Sum(b => b.Minutes),
             input.WorkingDaysPerWeek,
             input.HireDate,
             input.LastDay,
@@ -262,7 +373,7 @@ public class PayrollRunService(
         var run = await runs.GetEntityWithSpec(new PayrollRunByIdSpecification(runId, withAdjustments: true), ct);
         if (run is null) return ServiceResult<IReadOnlyList<PayrollAdjustmentDto>>.Fail("Payroll run not found.", ServiceErrorType.NotFound);
         return ServiceResult<IReadOnlyList<PayrollAdjustmentDto>>.Success(
-            run.Adjustments.Select(a => new PayrollAdjustmentDto(a.Id, a.EmployeeId, a.Label, a.Amount)).ToList());
+            run.Adjustments.Select(a => new PayrollAdjustmentDto(a.Id, a.EmployeeId, a.Label, a.Amount, (int)a.Tax)).ToList());
     }
 
     public async Task<ServiceResult<PayrollRunDetailDto>> AddAdjustmentAsync(Guid actorUserId, Guid runId, AddAdjusmentDto dto, CancellationToken ct = default)
@@ -277,12 +388,15 @@ public class PayrollRunService(
         var inRun = (await results.ListAsync(new PayrollResultsByRunSpecification(runId), ct)).Any(r => r.EmployeeId == dto.EmployeeId);
         if (!inRun) return Fail("That employee isn't part of this run.");
 
+        if (!Enum.IsDefined(typeof(AdjustmentTax), dto.Tax)) return Fail("Choose a valid tax treatment.");
+
         adjustmentRepo.Add(new PayrollAdjustmentRecord
         {
            PayrollRunId = runId,
            EmployeeId = dto.EmployeeId!.Value,
            Label = dto.Label.Trim(),
            Amount = dto.Amount,
+           Tax = (AdjustmentTax)dto.Tax,
            CreatedByUserId = actorUserId 
         });
 
@@ -350,6 +464,32 @@ public class PayrollRunService(
         var error = PayrollRunRules.CheckFinalize(run.Status, run.ApprovedByUserId, actorUserId);
         if (error is not null) return Fail(error);
 
+        var applications = await loanApplications.ListAsync(new LoanApplicationsByRunSpecification(runId), ct);
+        var loans = applications.Count == 0
+            ? new Dictionary<Guid, RecurringPayrollItem>()
+            : (await recurring.ListAsync(new RecurringItemsByIdsSpecification(
+                applications.Select(a => a.RecurringPayrollItemId).ToList()), ct)).ToDictionary(i => i.Id);
+
+        foreach (var app in applications)
+        {
+            if (!loans.TryGetValue(app.RecurringPayrollItemId, out var item) || item.TotalOwed is null)
+                return Fail("A recurring loan used by this run no longer exists. Recompute the run.", ServiceErrorType.Conflict);
+
+            var problem = RecurringRules.CheckFinalizeApplication(item.Label, item.TotalOwed.Value, item.PaidSoFar, app.Amount);
+            if (problem is not null) return Fail(problem, ServiceErrorType.Conflict);
+        }
+
+        foreach (var app in applications)
+        {
+            loans[app.RecurringPayrollItemId].PaidSoFar += app.Amount;
+            loanRayments.Add(new LoanRepayment
+            {
+                RecurringPayrollItemId = app.RecurringPayrollItemId,
+                PayrollRunId = runId,
+                Amount = app.Amount
+            });
+        }
+
         var now = clock.GetUtcNow().UtcDateTime;
         run.Status = PayrollRunStatus.Finalized;
         run.FinalizedByUserId = actorUserId;
@@ -387,6 +527,9 @@ public class PayrollRunService(
         if (!Enum.IsDefined(typeof(PayFrequency), dto.Frequency) || !Enum.IsDefined(typeof(ContributionDeduction), dto.ContributionPolicy))
             return ServiceResult<PayrollSettingsDto>.Fail("Choose a valid frequency and contribution policy.");
 
+        if (!Enum.IsDefined(typeof(PartialMonthContribution), dto.PartialMonthContribution))
+            return ServiceResult<PayrollSettingsDto>.Fail("Choose a valid rule for the partial months.");
+
         var settings = await GetOrCreateSettingsAsync(ct);
         settings.Frequency = (PayFrequency)dto.Frequency;
         settings.ContributionPolicy = (ContributionDeduction)dto.ContributionPolicy;
@@ -394,6 +537,9 @@ public class PayrollRunService(
         settings.WorkingDaysFactorSixDay = dto.WorkingDaysFactorSixDay;
         settings.HoursPerDay = dto.HoursPerDay;
         settings.OrdinaryOvertimeMultiplier = dto.OrdinaryOvertimeMultiplier;
+        settings.RestDayOvertimeMultiplier = dto.RestDayOvertimeMultiplier;
+        settings.HolidayOvertimeMultiplier = dto.HolidayOvertimeMultiplier;
+        settings.PartialMonthContribution = (PartialMonthContribution)dto.PartialMonthContribution;
         await unit.Complete();
 
         return ServiceResult<PayrollSettingsDto>.Success(ToDto(settings));
@@ -405,7 +551,10 @@ public class PayrollRunService(
         s.WorkingDaysFactorFiveDay,
         s.WorkingDaysFactorSixDay,
         s.HoursPerDay,
-        s.OrdinaryOvertimeMultiplier);
+        s.OrdinaryOvertimeMultiplier,
+        s.RestDayOvertimeMultiplier,
+        s.HolidayOvertimeMultiplier,
+        (int)s.PartialMonthContribution);
 
     private static string AppendNote(string? existing, string line) =>
         string.IsNullOrEmpty(existing) ? line : $"{existing}\n{line}";
@@ -413,4 +562,34 @@ public class PayrollRunService(
 
     private static ServiceResult<PayrollRunDetailDto> Fail(string message, ServiceErrorType type = ServiceErrorType.Validation) =>
         ServiceResult<PayrollRunDetailDto>.Fail(message, type);
+
+    private static TimeZoneInfo ResolveZone(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id)) return TimeZoneInfo.Utc;
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById(id);
+        } catch (Exception)
+        {
+            return TimeZoneInfo.Utc;
+        }
+    }
+
+    private async Task<HashSet<DateOnly>> LeaveDatesAsync(
+        Employee person, IEnumerable<LeaveRequest> requests, IReadOnlyDictionary<Guid, LeaveType> types, PayPeriod period, CancellationToken ct)
+    {
+        var dates = new HashSet<DateOnly>();
+        foreach (var req in requests)
+        {
+            if (!types.TryGetValue(req.LeaveTypeId, out var type)) continue;
+            var calc = await leaveCalculation.CalculateAsync(person, type, req.StartDate, req.EndDate, req.StartPortion, req.EndPortion, ct);
+            if (!calc.Succeeded) continue;
+
+            foreach (var line in calc.Value!.Lines)
+                if (line.Status == LeaveDayStatus.Counted && line.Date >= period.Start && line.Date <= period.End)
+                    dates.Add(line.Date);
+        }
+
+        return dates;
+    }
 }

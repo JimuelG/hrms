@@ -218,7 +218,7 @@ public class AttendanceCorrectionService(
                 ClockInUtc = plan.ClockInUtc,
                 ClockOutUtc = plan.ClockOutUtc,
                 ScheduledStart = schedule?.StartTime,
-                ScheduleEnd = schedule?.EndTime,
+                ScheduledEnd = schedule?.EndTime,
                 Flags = flags
             });
         }

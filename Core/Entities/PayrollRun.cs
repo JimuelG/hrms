@@ -14,9 +14,14 @@ public class PayrollRun : BaseEntity, ITenantEntity
     public PayFrequency Frequency { get; set; }
     public ContributionDeduction ContributionPolicy { get; set; }
     public int WorkingDaysFactorFiveDay { get; set; }
-    public int WorkingDaysFactorySixDay { get; set; }
+    public int WorkingDaysFactorSixDay { get; set; }
     public decimal HoursPerDay { get; set; }
     public decimal OrdinaryOvertimeMultiplier { get; set; }
+    public decimal? RestDayOvertimeMultiplier { get; set; }
+    public decimal? HolidayOvertimeMultiplier { get; set; }
+
+    public bool AttendanceDeductionsEnabled { get; set; } = false;
+    public int AttendanceGraceMinutes { get; set; } = 0;
 
     public string? Notes { get; set; }
     
@@ -31,10 +36,11 @@ public class PayrollRun : BaseEntity, ITenantEntity
 
     public DateTime LastActivityAtUtc { get; set; } = DateTime.UtcNow;
     public byte[] RowVersion { get; set; } = default!;
+    public PartialMonthContribution PartialMonthContribution { get; set; } = PartialMonthContribution.FullPeriod;
 
     public ICollection<PayrollResultRecord> Results { get; set; } = [];
     public ICollection<PayrollAdjustmentRecord> Adjustments { get; set; } = [];
 
-    public PayrollSettings ToSettings() => new(Frequency, WorkingDaysFactorFiveDay, WorkingDaysFactorySixDay, HoursPerDay, OrdinaryOvertimeMultiplier);
+    public PayrollSettings ToSettings() => new(Frequency, WorkingDaysFactorFiveDay, WorkingDaysFactorSixDay, HoursPerDay, OrdinaryOvertimeMultiplier, RestDayOvertimeMultiplier, HolidayOvertimeMultiplier, AttendanceDeductionsEnabled, AttendanceGraceMinutes, PartialMonthContribution);
     public PayPeriod Period => new(PeriodStart, PeriodEnd);
 }

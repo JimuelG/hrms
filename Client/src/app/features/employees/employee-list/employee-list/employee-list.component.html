@@ -144,6 +144,13 @@
                 </select>
               </label>
             }
+            @if (editing()) {
+              <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Last working day</span>
+                <input type="date" [(ngModel)]="form.lastWorkingDay" name="lastWorkingDay"
+                  class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" />
+                <span class="block text-xs text-slate-400 mt-1">Required when the status is Resigned or Terminated.</span>
+              </label>
+            }
           }
         </select>
       </label>

@@ -14,3 +14,16 @@ body {
 :focus-visible { 
   outline: 2px solid theme('colors.indigo.500'); outline-offset: 1px; 
 }
+
+@media print {
+  .no-print { display: none !important; }
+
+  /* Print on white regardless of dark mode */
+  html.dark .payslip,
+  html.dark .payslip * {
+    background: #fff !important;
+    color: #000 !important;
+    border-color: #ccc !important;
+  }
+  .payslip { border: none !important; max-width: none !important; padding: 0 !important; }
+}

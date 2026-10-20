@@ -24,7 +24,8 @@ public sealed record EmployeeDto(
     Guid? ScheduleId,
     string? ScheduleName,
     DateTime CreatedAtUtc,
-    bool HasLinkedAccount);
+    bool HasLinkedAccount,
+    DateOnly? LastWorkingDay);
 
 public sealed class CreateEmployeeDto
 {
@@ -83,6 +84,7 @@ public sealed class UpdateEmployeeDto
     public Guid? ScheduleId { get; init; }
     [Required]
     public int Status { get; init; }
+    public DateOnly? LastWorkingDay { get; init; }
 }
 
 public sealed record EmergencyContactDto(

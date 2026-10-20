@@ -5,7 +5,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { PayrollService } from '../../../../core/services/payroll.service';
 import { PermissionService } from '../../../../core/services/permission.service';
 import { PERMISSIONS } from '../../../../shared/constants/permissions';
-import { PayrollAdjustment, PayrollLineKind, PayrollResult, PayrollRunDetail, PayrollRunStatus, RUN_STATUS_LABELS, runStattusClass } from '../../../../shared/models/payroll';
+import { ADJUSTMENT_TAX_LABELS, AdjustmentTax, PayrollAdjustment, PayrollLineKind, PayrollResult, PayrollRunDetail, PayrollRunStatus, RUN_STATUS_LABELS, runStattusClass } from '../../../../shared/models/payroll';
 import { dateLabel, peso } from '../../../../shared/utils/payroll-ui.util';
 import { firstValueFrom } from 'rxjs';
 import { errorMessage } from '../../../../shared/utils/api-error.util';
@@ -35,6 +35,9 @@ export class PayrollRunDetailComponent implements OnInit{
   readonly peso = peso;
   readonly dateLabel = dateLabel;
 
+  readonly taxOptions = [AdjustmentTax.NonTaxable, AdjustmentTax.Taxable];
+  readonly taxLabel = ADJUSTMENT_TAX_LABELS;
+
   private id = this.route.snapshot.paramMap.get('id')!;
   detail = signal<PayrollRunDetail | null>(null);
   adjustments = signal<PayrollAdjustment[]>([]);
@@ -48,7 +51,7 @@ export class PayrollRunDetailComponent implements OnInit{
   dialog = signal<Dialog>(null);
   dialogError = signal<string | null>(null);
   reason = '';
-  adj = { employeeId: '', label: '', amount: 0 };
+  adj = { employeeId: '', label: '', amount: 0, tax: AdjustmentTax.Taxable };
 
 
   isDraft = computed(() => this.detail()?.run.status === PayrollRunStatus.Draft);
@@ -128,7 +131,7 @@ export class PayrollRunDetailComponent implements OnInit{
 
   openDialog(d: Dialog, employeeId = ''): void {
     this.reason = '';
-    this.adj = { employeeId, label: '', amount: 0 };
+    this.adj = { employeeId, label: '', amount: 0, tax: AdjustmentTax.NonTaxable };
     this.dialogError.set(null);
     this.dialog.set(d);
   }
@@ -150,7 +153,7 @@ export class PayrollRunDetailComponent implements OnInit{
     const ok = await this.run(
       d === 'adjust' ? () => firstValueFrom(this.payroll.addAdjustment(this.id, this.adj.employeeId, this.adj.label.trim(), this.adj.amount))
       : d === 'sendback' ? () => firstValueFrom(this.payroll.sendBack(this.id, this.reason.trim()))
-      : () => firstValueFrom(this.payroll.cancel(this.id, this.reason.trim())),
+      : () => firstValueFrom(this.payroll.addAdjustment(this.id, this.adj.employeeId, this.adj.label.trim(), this.adj.amount, this.adj.tax)),
       d === 'adjust' ? 'Adjustment added and the run recomputed.' : d === 'sendback' ? 'Send back to draft.' : 'Run cancelled.');
 
     if (ok) this.dialog.set(null);

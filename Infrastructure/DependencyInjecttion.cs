@@ -44,6 +44,7 @@ public static class DependencyInjecttion
         services.AddScoped<IUserDirectory, UserDirectory>();
 
         services.AddScoped<IPermissionDirectory, PermissionDirectory>();
+        services.AddScoped<ITenantNameProvider, TenantNameProvider>();
         
         services.AddOptions<JwtOptions>()
             .Bind(config.GetSection(JwtOptions.Section))

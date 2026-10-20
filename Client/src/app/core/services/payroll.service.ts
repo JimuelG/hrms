@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment.development';
 import { Observable } from 'rxjs';
-import { Compensation, PayrollAdjustment, PayrollRunDetail, PayrollRunSummary, PayrollSettings, RuleSet, RuleSetForm, StatutoryKind, StatutoryPreview } from '../../shared/models/payroll';
+import { AdjustmentTax, Compensation, PayrollAdjustment, PayrollRunDetail, PayrollRunSummary, PayrollSettings, Payslip, PayslipSummary, RecurringItem, RecurringItemForm, RuleSet, RuleSetForm, StatutoryKind, StatutoryPreview } from '../../shared/models/payroll';
 
 @Injectable({
   providedIn: 'root',
@@ -12,6 +12,8 @@ export class PayrollService {
   private runs = `${environment.apiUrl}/payrollruns`;
   private rules = `${environment.apiUrl}/statutory`;
   private comp = `${environment.apiUrl}/compensation`;
+  private payslips = `${environment.apiUrl}/payslips`;
+  private payrollBase = `${environment.apiUrl}/payroll`;
 
   listRuns(): Observable<PayrollRunSummary[]> {
     return this.http.get<PayrollRunSummary[]>(this.runs);
@@ -49,8 +51,8 @@ export class PayrollService {
     return this.http.get<PayrollAdjustment[]>(`${this.runs}/${id}/adjustments`);
   }
 
-  addAdjustment(id: string, employeeId: string, label: string, amount: number): Observable<PayrollRunDetail> {
-    return this.http.post<PayrollRunDetail>(`${this.runs}/${id}/adjustments`, { employeeId, label, amount });
+  addAdjustment(id: string, employeeId: string, label: string, amount: number, tax = AdjustmentTax.NonTaxable): Observable<PayrollRunDetail> {
+    return this.http.post<PayrollRunDetail>(`${this.runs}/${id}/adjustments`, { employeeId, label, amount, tax });
   }
 
   removeAdjustment(id: string, adjustmentId: string): Observable<PayrollRunDetail> {
@@ -98,5 +100,29 @@ export class PayrollService {
 
   setCompensation(employeeId: string, monthlyBasicSalary: number, effectiveFrom: string, reason: string): Observable<Compensation> {
     return this.http.post<Compensation>(`${this.comp}/employee/${employeeId}`, { monthlyBasicSalary, effectiveFrom, reason });
+  }
+
+  listMyPayslip(): Observable<PayslipSummary[]> {
+    return this.http.get<PayslipSummary[]>(`${this.payslips}/me`);
+  }
+
+  getMyPayslip(runId: string): Observable<Payslip> {
+    return this.http.get<Payslip>(`${this.payslips}/me/${runId}`);
+  }
+
+  getPayslip(runId: string, employeeId: string): Observable<Payslip> {
+    return this.http.get<Payslip>(`${this.payslips}/run/${runId}/employee/${employeeId}`);
+  }
+
+  listRecurring(employeeId: string): Observable<RecurringItem[]> {
+    return this.http.get<RecurringItem[]>(`${this.payrollBase}/recurring-items/employee/${employeeId}`);
+  }
+
+  createRecurring(v: RecurringItemForm): Observable<RecurringItem> {
+    return this.http.post<RecurringItem>(`${this.payrollBase}/recurring-items`, v);
+  }
+
+  deactivateRecurring(id: string): Observable<RecurringItem> {
+    return this.http.post<RecurringItem>(`${this.payrollBase}/recurring-items/${id}/deactivate`, {});
   }
 }

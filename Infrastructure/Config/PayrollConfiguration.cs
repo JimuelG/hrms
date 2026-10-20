@@ -13,6 +13,7 @@ public class PayrollSettingsConfiguration : IEntityTypeConfiguration<PayrollSett
         builder.Property(s => s.ContributionPolicy).HasConversion<int>();
         builder.Property(s => s.HoursPerDay).HasColumnType("decimal(4,2)");
         builder.Property(s => s.OrdinaryOvertimeMultiplier).HasColumnType("decimal(5,2)");
+        builder.Property(s => s.PartialMonthContribution).HasConversion<int>();
 
         builder.HasIndex(s => s.TenantId).IsUnique();
     }
@@ -30,6 +31,7 @@ public class PayrollRunConfiguration : IEntityTypeConfiguration<PayrollRun>
         builder.Property(r => r.Notes).HasMaxLength(1000);
         builder.Property(r => r.CancellationReason).HasMaxLength(500);
         builder.Property(r => r.RowVersion).IsRowVersion();
+        builder.Property(s => s.PartialMonthContribution).HasConversion<int>();
 
         builder.HasMany(r => r.Results).WithOne(x => x.Run).HasForeignKey(x => x.PayrollRunId).OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(r => r.Adjustments).WithOne(x => x.Run).HasForeignKey(x => x.PayrollRunId).OnDelete(DeleteBehavior.Cascade);

@@ -1,0 +1,8 @@
+<div class="max-w-3xl">
+    <a [routerLink]="['/payroll/runs', runId]" class="no-print inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 mb-4">
+    <i class="fa-solid fa-arrow-left text-xs"></i> Back to the run
+    </a>
+    @if (error()) { <div class="text-red-600 dark:text-red-400 text-sm">{{ error() }}</div> }
+    @else if (payslip(); as p) { <app-payslip-view [payslip]="p" /> }
+    @else { <p class="text-sm text-slate-400">Loading…</p> }
+</div>

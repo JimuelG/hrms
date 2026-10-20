@@ -19,11 +19,17 @@ public static class PayrollComposer
         if (gross.Error is not null) return Fail(gross.Error);
 
         var notes = new List<string>(gross.Notes);
-        var warnings = new List<string>();
+        var warnings = new List<string>(gross.Warnings);
+        
         var lines = gross.Lines.Select(l => new PayrollLine(l.Code, l.Label, l.Amount, PayrollLineKind.Earning)).ToList();
 
         var firstHalf = input.Gross.Period.Start.Day <= 15;
         decimal employeeContributions = 0m, employerContributions = 0m;
+        
+        var window = PayPeriodCalculator.EmployedWindow(input.Gross.Period, input.Gross.HireDate, input.Gross.LastDay);
+        var employedDays = window is null ? 0 : window.Value.End.DayNumber - window.Value.Start.DayNumber + 1;
+        var fraction = decimal.Round((decimal)employedDays / input.Gross.Period.Days, 10);
+        var factor = PartialPeriodRules.Factor(settings.PartialMonth, fraction);
 
         void Contribution(string code, string label, RuleSetData? rule)
         {
@@ -34,8 +40,11 @@ public static class PayrollComposer
             }
 
             var monthly = StatutoryCalculator.Compute(rule, gross.MonthlyBasic);
-            var employee = ContributionSpreader.ForPeriod(monthly.Employee, frequency, firstHalf, options.ContributionPolicy);
-            var employer = ContributionSpreader.ForPeriod(monthly.Employer, frequency, firstHalf, options.ContributionPolicy);
+
+            var employee = PartialPeriodRules.Apply(
+                ContributionSpreader.ForPeriod(monthly.Employee, frequency, firstHalf, options.ContributionPolicy), factor);
+            var employer = PartialPeriodRules.Apply( 
+                ContributionSpreader.ForPeriod(monthly.Employer, frequency, firstHalf, options.ContributionPolicy), factor);
 
             employeeContributions += employee;
             employerContributions += employer;
@@ -46,7 +55,13 @@ public static class PayrollComposer
         Contribution("PHILHEALTH", "PhilHealth", rules.PhilHealth);
         Contribution("PAGIBIG", "Pag-IBIG", rules.PagIbig);
 
-        var taxable = Math.Max(0m, gross.Gross - employeeContributions);
+        if (factor < 1m && (rules.Sss is not null || rules.PhilHealth is not null || rules.PagIbig is not null))
+            notes.Add(settings.PartialMonth == PartialMonthContribution.SkipIfPartial
+                ? "No contribution were taken, because the employee wasn't employed for the whole period."
+                : $"Contributions were prorated to {fraction:P0}, matching they days employed.");
+
+        var taxable = Math.Max(0m, gross.Gross - employeeContributions + AdjustmentRules.TaxableEffect(input.Adjustments));
+
         if (rules.Tax is null)
         {
             warnings.Add("No withholding tax table is in force for this period, so no tax was deducted.");
@@ -66,7 +81,10 @@ public static class PayrollComposer
                 : new PayrollLine("ADJUSTMENT", label, -amount, PayrollLineKind.Deduction));
         }
 
-        if (input.Adjustments.Count > 0) notes.Add("Manual adjustments don't change taxable income.");
+        if (input.Adjustments.Any(a => a.Tax == AdjustmentTax.Taxable))
+            notes.Add("Taxable adjustments were included in taxable income.");
+        else if (input.Adjustments.Count > 0)
+            notes.Add("Manual adjustments don't change taxable income.");
 
         var earnings = lines.Where(l => l.Kind == PayrollLineKind.Earning).Sum(l => l.Amount);
         var deductions = lines.Where(l => l.Kind == PayrollLineKind.Deduction).Sum(l => l.Amount);
@@ -92,4 +110,6 @@ public static class PayrollComposer
     private static decimal Money(decimal v) => decimal.Round(v, 2, MidpointRounding.AwayFromZero);
 
     private static PayrollResult Fail(string error) => new([], 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, 0m, [], [], error);
+
+    public static PayrollResult Failure(string error) => Fail(error);
 }

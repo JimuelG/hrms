@@ -1,0 +1,72 @@
+<div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+  <div class="flex items-center justify-between mb-3">
+    <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Recurring pay items</div>
+    <button (click)="openForm()" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"><i class="fa-solid fa-plus text-[10px]"></i> Add</button>
+  </div>
+  @if (error()) { <div class="text-red-600 dark:text-red-400 text-sm mb-2">{{ error() }}</div> }
+
+  <div class="space-y-1.5">
+    @for (i of items(); track i.id) {
+      <div class="flex items-start justify-between gap-3 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2" [class.opacity-60]="!i.isActive">
+        <div class="min-w-0">
+          <div class="text-sm font-medium flex flex-wrap items-center gap-2">
+            {{ i.label }}
+            <span class="tabular-nums" [class.text-emerald-600]="i.amount > 0" [class.text-red-600]="i.amount < 0">{{ i.amount > 0 ? '+' : '' }}{{ peso(i.amount) }}</span>
+            <span class="text-[11px] font-normal text-slate-400">per period</span>
+            @if (!i.isActive) { <span class="text-[11px] font-medium px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 dark:bg-slate-800">Stopped</span> }
+          </div>
+          <div class="text-xs text-slate-500 dark:text-slate-400">
+            From {{ dateLabel(i.from) }}@if (i.to) { to {{ dateLabel(i.to) }} } · {{ taxLabel[i.tax] }}
+          </div>
+          @if (i.balance !== null) {
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Loan: {{ peso(i.paidSoFar) }} paid of {{ peso(i.totalOwed!) }} · balance {{ peso(i.balance) }}</div>
+          }
+        </div>
+        @if (i.isActive) { <button (click)="deactivate(i)" class="text-xs font-medium text-red-600 dark:text-red-400 hover:underline shrink-0">Stop</button> }
+      </div>
+    } @empty {
+      <p class="text-sm text-slate-400">@if (loading()) { Loading… } @else { None. }</p>
+    }
+  </div>
+  <p class="text-xs text-slate-400 mt-2">Items are added to every payroll run in their date range. Loan balances fall when a run is finalized, not when it is computed.</p>
+</div>
+
+@if (formOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="formOpen.set(false)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5">
+    <h2 class="font-semibold text-sm mb-4">Add a recurring pay item</h2>
+    @if (formError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ formError() }}</div> }
+    <div class="space-y-3">
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Kind</span>
+        <select [(ngModel)]="form.kind" name="kind" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+          <option value="allowance">Allowance (adds pay)</option>
+          <option value="deduction">Deduction (takes pay)</option>
+          <option value="loan">Loan repayment (stops when repaid)</option>
+        </select></label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Label</span>
+        <input [(ngModel)]="form.label" name="label" maxlength="100" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">{{ form.kind === 'loan' ? 'Instalment per period' : 'Amount per period' }}</span>
+          <input type="number" min="0" step="0.01" [(ngModel)]="form.amount" name="amount" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+        @if (form.kind === 'loan') {
+          <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Total owed</span>
+            <input type="number" min="0" step="0.01" [(ngModel)]="form.totalOwed" name="owed" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+        }
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Starts</span>
+          <input type="date" [(ngModel)]="form.from" name="from" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Ends (optional)</span>
+          <input type="date" [(ngModel)]="form.to" name="to" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+      </div>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Tax treatment</span>
+        <select [(ngModel)]="form.tax" name="tax" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+          @for (t of taxOptions; track t) { <option [ngValue]="t">{{ taxLabel[t] }}</option> }
+        </select></label>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="formOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="save()" [disabled]="saving()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">{{ saving() ? 'Saving…' : 'Add' }}</button>
+    </div>
+  </div>
+}

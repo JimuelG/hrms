@@ -28,7 +28,7 @@ public class StatutoryRuleSet : SoftDeletableEntity, ITenantEntity, IAuditable
     public string? Notes { get; set; }
     public Guid CreatedByUserId { get; set; }
 
-    public ICollection<StatutoryBracket> Brackets { get; set; } = new List<StatutoryBracket>();
+    public ICollection<StatutoryBracket> Brackets { get; set; } = [];
 }
 
 public class StatutoryBracket : BaseEntity, ITenantEntity

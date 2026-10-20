@@ -32,4 +32,5 @@ public class Employee : SoftDeletableEntity, ITenantEntity, IAuditable
     public EmploymentType EmploymentType { get; set; }
     public DateOnly HireDate { get; set; }
     public EmployeeStatus Status { get; set; } = EmployeeStatus.Probationary;
+    public DateOnly? LastWorkingDay { get; set; }
 }

@@ -63,6 +63,7 @@ export class ShellComponent implements OnInit{
       { label: 'Payroll runs', path: '/payroll/runs', icon: 'fa-money-check-dollar', permission: P.payroll.read },
       { label: 'Statutory tables', path: '/payroll/rules', icon: 'fa-scale-balanced', permission: P.payroll.readRules },
       { label: 'Payroll settings', path: '/payroll/settings', icon: 'fa-sliders', permission: P.payroll.manageSettings },
+      { label: 'My payslips', path: '/payslips', icon: 'fa-file-invoice-dollar', permission: P.payroll.viewOwn },
     ]},
     { items: [{ label: 'Settings', path: '/settings', icon: 'fa-gear', permission: P.tenant.manageSettings }] }
   ]

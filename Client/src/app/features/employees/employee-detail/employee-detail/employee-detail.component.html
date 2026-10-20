@@ -39,6 +39,7 @@
           <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Manager</dt><dd>{{ e.managerName || '—' }}</dd></div>
           <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Employment type</dt><dd>{{ employmentTypeLabel[e.employmentType] }}</dd></div>
           <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Hire date</dt><dd>{{ e.hireDate }}</dd></div>
+          <div><dt class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">Last working day</dt><dd>{{ e.lastWorkingDay || "—" }}</dd></div>
         </dl>
         <div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
             <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Work schedule</div>
@@ -56,63 +57,67 @@
             </div>
             @if (scheduleError()) { <div class="text-red-600 dark:text-red-400 text-sm mt-2">{{ scheduleError() }}</div> }
           </div>
-      </div>
-      @if (permissions.can(P.employees.write) && permissions.can(P.workLocations.read)) {
-        <div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
-          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Work locations (where this person may clock in)</div>
-          <div class="space-y-1.5">
-            @for (l of allLocations(); track l.id) {
-              <label class="flex items-center gap-2.5 text-sm cursor-pointer">
-                <input type="checkbox" [checked]="selectedLocationIds().has(l.id)" (change)="toggleLocation(l.id)"
-                  class="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500" />
-                {{ l.name }}
-                <span class="text-xs text-slate-400">{{ locationTypeLabel[l.type] }}</span>
-              </label>
-            } @empty {
-              <p class="text-sm text-slate-400">No active work locations yet. Create one under Work locations.</p>
-            }
-          </div>
-          <div class="flex items-center gap-3 mt-3">
-            <button (click)="saveLocations()" [disabled]="locationsSaving() || allLocations().length === 0"
-              class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-50">
-              {{ locationsSaving() ? 'Saving…' : 'Save locations' }}
-            </button>
-            @if (locationsSaved()) { <span class="text-sm text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-circle-check text-xs"></i> Saved</span> }
-          </div>
-          @if (locationsError()) { <div class="text-red-600 dark:text-red-400 text-sm mt-2">{{ locationsError() }}</div> }
-        </div>
-      }
-
-      @if (permissions.can(P.employees.linkUser)) {
-        <div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
-          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Login account</div>
-          @if (e.hasLinkedAccount) {
-            <div class="flex items-center gap-3 text-sm">
-              <span class="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400"><i class="fa-solid fa-link text-xs"></i> A login is linked. This person can clock in.</span>
-              <button (click)="unlinkAccount()" [disabled]="linkSaving()" class="text-xs font-medium text-red-600 dark:text-red-400 hover:underline disabled:opacity-50">Unlink</button>
+      
+        @if (permissions.can(P.employees.write) && permissions.can(P.workLocations.read)) {
+          <div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+            <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Work locations (where this person may clock in)</div>
+            <div class="space-y-1.5">
+              @for (l of allLocations(); track l.id) {
+                <label class="flex items-center gap-2.5 text-sm cursor-pointer">
+                  <input type="checkbox" [checked]="selectedLocationIds().has(l.id)" (change)="toggleLocation(l.id)"
+                    class="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500" />
+                  {{ l.name }}
+                  <span class="text-xs text-slate-400">{{ locationTypeLabel[l.type] }}</span>
+                </label>
+              } @empty {
+                <p class="text-sm text-slate-400">No active work locations yet. Create one under Work locations.</p>
+              }
             </div>
-          } @else {
-            <div class="flex items-center gap-2">
-              <input type="email" [(ngModel)]="linkEmail" name="linkEmail" placeholder="Login email, e.g. name@company.com"
-                class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 min-w-[260px]" />
-              <button (click)="linkAccount()" [disabled]="linkSaving()"
+            <div class="flex items-center gap-3 mt-3">
+              <button (click)="saveLocations()" [disabled]="locationsSaving() || allLocations().length === 0"
                 class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-50">
-                {{ linkSaving() ? 'Linking…' : 'Link account' }}
+                {{ locationsSaving() ? 'Saving…' : 'Save locations' }}
               </button>
+              @if (locationsSaved()) { <span class="text-sm text-emerald-600 dark:text-emerald-400"><i class="fa-solid fa-circle-check text-xs"></i> Saved</span> }
             </div>
-            <p class="text-xs text-slate-400 mt-1.5">The login must already exist and belong to this company. Linking lets the person clock in as this employee.</p>
-          }
-          @if (linkError()) { <div class="text-red-600 dark:text-red-400 text-sm mt-2">{{ linkError() }}</div> }
+            @if (locationsError()) { <div class="text-red-600 dark:text-red-400 text-sm mt-2">{{ locationsError() }}</div> }
+          </div>
+        }
 
-          @if (permissions.can(P.leave.manage)) {
-            <app-employee-leave-balances [employeeId]="employeeId" />
-          }
+        @if (permissions.can(P.employees.linkUser)) {
+          <div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+            <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Login account</div>
+            @if (e.hasLinkedAccount) {
+              <div class="flex items-center gap-3 text-sm">
+                <span class="inline-flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400"><i class="fa-solid fa-link text-xs"></i> A login is linked. This person can clock in.</span>
+                <button (click)="unlinkAccount()" [disabled]="linkSaving()" class="text-xs font-medium text-red-600 dark:text-red-400 hover:underline disabled:opacity-50">Unlink</button>
+              </div>
+            } @else {
+              <div class="flex items-center gap-2">
+                <input type="email" [(ngModel)]="linkEmail" name="linkEmail" placeholder="Login email, e.g. name@company.com"
+                  class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 min-w-[260px]" />
+                <button (click)="linkAccount()" [disabled]="linkSaving()"
+                  class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white disabled:opacity-50">
+                  {{ linkSaving() ? 'Linking…' : 'Link account' }}
+                </button>
+              </div>
+              <p class="text-xs text-slate-400 mt-1.5">The login must already exist and belong to this company. Linking lets the person clock in as this employee.</p>
+            }
+            @if (linkError()) { <div class="text-red-600 dark:text-red-400 text-sm mt-2">{{ linkError() }}</div> }
+          </div>
+        }
+        @if (permissions.can(P.leave.manage)) {
+          <app-employee-leave-balances [employeeId]="employeeId" />
+        }
 
-          @if (permissions.can(P.compensation.read)) {
-            <app-employee-compensation [employeeId]="employeeId" />
-          }
-        </div>
-      }
+        @if (permissions.can(P.compensation.read)) {
+          <app-employee-compensation [employeeId]="employeeId" />
+        }
+
+        @if (permissions.can(P.payroll.run)) {
+          <app-employee-recurring [employeeId]="employeeId" />
+        }
+      </div>
     }
 
     <!-- EMERGENCY CONTACTS -->

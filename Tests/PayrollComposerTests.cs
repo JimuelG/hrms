@@ -32,7 +32,7 @@ public class PayrollComposerTests
     private static PayrollEmployeeInput Input(
         PayPeriod? period = null, decimal unpaid = 0m, params PayrollAdjustment[] adjustments) =>
         new(new GrossInput([new SalaryPoint(new(2020, 1, 1), 26000m)], new(2020, 1, 1), null,
-            period ?? FirstHalf, 5, unpaid, 0), adjustments);
+            period ?? FirstHalf, 5, unpaid, []), adjustments);
 
     private static decimal Line(PayrollResult r, string code) => r.Lines.Single(l => l.Code == code).Amount;
 
@@ -170,7 +170,7 @@ public class PayrollComposerTests
     [Fact] public void A_Gross_Calculation_Error_Is_Passed_Through()
     {
         var notEmployed = new PayrollEmployeeInput(
-            new GrossInput([new SalaryPoint(new(2020, 1, 1), 26000m)], new(2026, 12, 1), null, FirstHalf, 5, 0m, 0), []);
+            new GrossInput([new SalaryPoint(new(2020, 1, 1), 26000m)], new(2026, 12, 1), null, FirstHalf, 5, 0m, []), []);
         Assert.NotNull(PayrollComposer.Compose(notEmployed, Options(), Rules()).Error);
     }
 
@@ -189,5 +189,78 @@ public class PayrollComposerTests
     {
         var r = PayrollComposer.Compose(Input(unpaid: 0.5m), Options(), Rules());
         Assert.All(r.Lines, l => Assert.Equal(decimal.Round(l.Amount, 2), l.Amount));
+    }
+
+    private static PayrollEmployeeInput HiredOct8() =>
+    new(new GrossInput([new SalaryPoint(new(2020, 1, 1), 26000m)], new(2026, 10, 8), null, FirstHalf, 5, 0m, []), []);
+
+    private static PayrollOptions Partial(PartialMonthContribution p) =>
+        new(new PayrollSettings(PartialMonth: p), ContributionDeduction.SplitEvenly);
+
+    [Fact] public void Full_Period_Policy_Keeps_Todays_Behavior_For_A_Partial_Hire()
+    {
+        var r = PayrollComposer.Compose(HiredOct8(), Partial(PartialMonthContribution.FullPeriod), Rules());
+        Assert.Equal(150m, Line(r, "SSS"));
+        Assert.Equal(325m, Line(r, "PHILHEALTH"));
+        Assert.DoesNotContain(r.Notes, n => n.Contains("prorated to"));
+    }
+
+    [Fact] public void By_Days_Employed_Prorates_Employee_And_Employer_Shares()
+    {
+        var r = PayrollComposer.Compose(HiredOct8(), Partial(PartialMonthContribution.ByDaysEmployed), Rules());
+
+        Assert.Equal(80m, Line(r, "SSS"));            // 150 x 8/15
+        Assert.Equal(173.33m, Line(r, "PHILHEALTH")); // 325 x 8/15 = 173.333
+        Assert.Equal(26.67m, Line(r, "PAGIBIG"));     // 50 x 8/15 = 26.667
+        Assert.Equal(360m, r.EmployerContributions);  // 160 + 173.33 + 26.67
+        Assert.Contains(r.Notes, n => n.Contains("prorated to"));
+    }
+
+    [Fact] public void Skip_If_Partial_Takes_No_Contributions_And_Tax_Rises_Accordingly()
+    {
+        var r = PayrollComposer.Compose(HiredOct8(), Partial(PartialMonthContribution.SkipIfPartial), Rules());
+
+        Assert.DoesNotContain(r.Lines, l => l.Code is "SSS" or "PHILHEALTH" or "PAGIBIG");
+        Assert.Equal(0m, r.EmployerContributions);
+        Assert.Equal(r.Gross, r.TaxableIncome);
+        Assert.Contains(r.Notes, n => n.Contains("wasn't employed for the whole period"));
+    }
+
+    [Fact] public void A_Full_Period_Employee_Is_Unaffected_By_Any_Policy()
+    {
+        var plain = PayrollComposer.Compose(Input(), Options(), Rules());
+        foreach (var p in Enum.GetValues<PartialMonthContribution>())
+        {
+            var r = PayrollComposer.Compose(Input(), Partial(p), Rules());
+            Assert.Equal(plain.Net, r.Net);
+            Assert.Equal(plain.EmployerContributions, r.EmployerContributions);
+        }
+    }
+
+    [Fact] public void A_Leaver_Is_Prorated_The_Same_Way()
+    {
+        var leaver = new PayrollEmployeeInput(
+            new GrossInput([new SalaryPoint(new(2020, 1, 1), 26000m)], new(2020, 1, 1), new(2026, 10, 5), FirstHalf, 5, 0m, []), []);
+
+        var r = PayrollComposer.Compose(leaver, Partial(PartialMonthContribution.ByDaysEmployed), Rules());
+        Assert.Equal(50m, Line(r, "SSS"));            // 150 x 5/15
+    }
+
+    [Fact] public void A_Taxable_Bonus_Raises_Taxable_Income_And_Tax()
+    {
+        var plain = PayrollComposer.Compose(Input(), Options(), Rules());
+        var withBonus = PayrollComposer.Compose(
+            Input(adjustments: new PayrollAdjustment("Bonus", 5000m, AdjustmentTax.Taxable)), Options(), Rules());
+
+        Assert.Equal(plain.TaxableIncome + 5000m, withBonus.TaxableIncome);
+        Assert.Equal(747.50m, Line(withBonus, "TAX"));      // (17,475 - 10,000) x 10%
+        Assert.Contains(withBonus.Notes, n => n.Contains("Taxable adjustments"));
+    }
+
+    [Fact] public void A_Non_Taxable_Allowance_Leaves_Tax_Alone()
+    {
+        var plain = PayrollComposer.Compose(Input(), Options(), Rules());
+        var r = PayrollComposer.Compose(Input(adjustments: new PayrollAdjustment("Allowance", 5000m)), Options(), Rules());
+        Assert.Equal(Line(plain, "TAX"), Line(r, "TAX"));
     }
 }

@@ -47,6 +47,12 @@ public class LeaveController(
         (await balances.GetForEmployeeAsync(employeeId, year, ct)).ToActionResult(this);
 
     [HasPermission(Permissions.Leave.Manage)]
+    [HttpGet("balances/employee/{employeeId:guid}/ledger")]
+    public async Task<IActionResult> GetEmployeeLedger(
+        Guid employeeId, [FromQuery] int? year, [FromQuery] Guid? leaveTypeId, CancellationToken ct) =>
+        (await balances.GetLedgerForEmployeeAsync(employeeId, year, leaveTypeId, ct)).ToActionResult(this);
+
+    [HasPermission(Permissions.Leave.Manage)]
     [HttpPost("balances/grant")]
     public async Task<IActionResult> Grant(PostLedgerEntryDto dto, CancellationToken ct)
     {

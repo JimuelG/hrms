@@ -59,6 +59,7 @@ public sealed class AddAdjusmentDto
     [Required, MaxLength(100)]
     public string Label { get; init; } = "";
     public decimal Amount { get; init; }
+    public int Tax { get; init; } = 1;
 }
 
 public sealed class ReasonDto
@@ -67,7 +68,7 @@ public sealed class ReasonDto
     public string? Reason { get; init; }
 }
 
-public sealed record PayrollAdjustmentDto(Guid Id, Guid EmployeeId, string Label, decimal Amount);
+public sealed record PayrollAdjustmentDto(Guid Id, Guid EmployeeId, string Label, decimal Amount, int Tax);
 
 public sealed record PayrollSettingsDto(
     int Frequency,
@@ -75,7 +76,10 @@ public sealed record PayrollSettingsDto(
     int WorkingDaysFactorFiveDay,
     int WorkingDaysFactorSixDay,
     decimal HoursPerDay,
-    decimal OrdinaryOvertimeMultiplier);
+    decimal OrdinaryOvertimeMultiplier,
+    decimal? RestDayOvertimeMultiplier,
+    decimal? HolidayOvertimeMultiplier,
+    int PartialMonthContribution);
 
 public sealed class UpdatePayrollSettingsDto
 {
@@ -89,4 +93,34 @@ public sealed class UpdatePayrollSettingsDto
     public decimal HoursPerDay { get; init; }
     [Range(1, 5)]
     public decimal OrdinaryOvertimeMultiplier { get; init; }
+    public decimal? RestDayOvertimeMultiplier { get; init; }
+    public decimal? HolidayOvertimeMultiplier { get; init; }
+    public int PartialMonthContribution { get; init; } = 1;
+}
+
+public sealed record RecurringItemDto(
+    Guid Id,
+    Guid EmployeeId,
+    string Label,
+    decimal Amount,
+    int Tax,
+    DateOnly From,
+    DateOnly? To,
+    bool IsActive,
+    decimal? TotalOwed,
+    decimal PaidSoFar,
+    decimal? Balance);
+
+public sealed class CreateRecurringItemDto
+{
+    [Required]
+    public Guid? EmployeeId { get; init; }
+    [Required, MaxLength(100)]
+    public string Label { get; init; } = "";
+    public decimal Amount { get; init; }
+    public int Tax { get; init; } = 1;
+    [Required]
+    public DateOnly? From { get; init; }
+    public DateOnly? To { get; init; }
+    public decimal? TotalOwed { get; init; }
 }

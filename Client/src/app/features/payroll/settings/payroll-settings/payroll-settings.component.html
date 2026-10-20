@@ -33,6 +33,12 @@
           <input type="number" min="1" max="24" step="0.5" [ngModel]="f.hoursPerDay" (ngModelChange)="patch({ hoursPerDay: $event })" name="hpd" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
         <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Overtime multiplier (ordinary day)</span>
           <input type="number" min="1" max="5" step="0.05" [ngModel]="f.ordinaryOvertimeMultiplier" (ngModelChange)="patch({ ordinaryOvertimeMultiplier: $event })" name="ot" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Contributions for a partial period</span>
+          <select [ngModel]="f.partialMonthContribution" (ngModelChange)="patch({ partialMonthContribution: $event })" name="partial" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none">
+            @for (x of partials; track x) { <option [ngValue]="x">{{ partialLabel[x] }}</option> }
+          </select>
+          <span class="block text-xs text-slate-400 mt-1">For someone who joined or left part-way through a pay period. Ask your accountant which applies.</span>
+        </label>
       </div>
 
       @if (saveError()) { <div class="text-red-600 dark:text-red-400 text-sm">{{ saveError() }}</div> }

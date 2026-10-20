@@ -16,6 +16,7 @@ import { WorkLocationService } from '../../../../core/services/work-location.ser
 import { firstValueFrom } from 'rxjs';
 import { EmployeeLeaveBalancesComponent } from '../../employee-leave-balances/employee-leave-balances/employee-leave-balances.component';
 import { EmployeeCompensationComponent } from '../../employee-compensaion/employee-compensation/employee-compensation.component';
+import { EmployeeRecurringComponent } from '../../employee-recurring/employee-recurring/employee-recurring.component';
 
 type Tab = 'profile' | 'contacts' | 'documents' | 'timeline';
 
@@ -27,7 +28,8 @@ type Tab = 'profile' | 'contacts' | 'documents' | 'timeline';
     RouterLink,
     DatePipe,
     EmployeeLeaveBalancesComponent,
-    EmployeeCompensationComponent
+    EmployeeCompensationComponent,
+    EmployeeRecurringComponent
   ],
   templateUrl: './employee-detail.component.html',
   styleUrl: './employee-detail.component.scss',
@@ -255,7 +257,8 @@ export class EmployeeDetailComponent implements OnInit {
       employmentType: e.employmentType,
       hireDate: e.hireDate,
       status: e.status,
-      scheduleId: this.scheduleSelection
+      scheduleId: this.scheduleSelection,
+      lastWorkingDay: e.lastWorkingDay
     }).subscribe({
       next: (updated) => {
         this.employee.set(updated);

@@ -59,6 +59,7 @@ export interface Employee {
     status: EmployeeStatus;
     createdAtUtc: string;
     hasLinkedAccount: boolean;
+    lastWorkingDay: string | null;
 }
 
 export interface EmployeeFormValue {
@@ -76,6 +77,7 @@ export interface EmployeeFormValue {
     employmentType: EmploymentType;
     hireDate: string;
     status: EmployeeStatus;
+    lastWorkingDay?: string | null;
 }
 
 export interface EmergencyContact {

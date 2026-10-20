@@ -68,6 +68,9 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<PayrollRun> PayrollRuns => Set<PayrollRun>();
     public DbSet<PayrollResultRecord> PayrollResults => Set<PayrollResultRecord>();
     public DbSet<PayrollAdjustmentRecord> PayrollAdjustments => Set<PayrollAdjustmentRecord>();
+    public DbSet<RecurringPayrollItem> RecurringPayrollItems => Set<RecurringPayrollItem>();
+    public DbSet<LoanRepayment> LoanRepayments => Set<LoanRepayment>();
+    public DbSet<PayrollLoanApplication> PayrollLoanApplications => Set<PayrollLoanApplication>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

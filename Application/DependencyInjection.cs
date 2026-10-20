@@ -51,6 +51,8 @@ public static class DependencyInjection
         services.AddScoped<ICompensationService, CompensationService>();
         services.AddScoped<IStatutoryService, StatutoryService>();
         services.AddScoped<IPayrollRunService, PayrollRunService>();
+        services.AddScoped<IPayslipService, PayslipService>();
+        services.AddScoped<IRecurringPayrollService, RecurringPayrollService>();
 
         return services;
     }

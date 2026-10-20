@@ -203,7 +203,8 @@ public static class DevDataSeeder
         await EnsureTenantRole(db, tenantInit, acme, "Employee", isSystemRole: true,
         [
             Permissions.Attendance.Clock,
-            Permissions.Leave.Request
+            Permissions.Leave.Request,
+            Permissions.Payroll.ViewOwn
         ], assignTo: acmeEmployeeUser);
 
         await EnsureOnboardingTemplates(acme);
@@ -260,6 +261,9 @@ public static class DevDataSeeder
            Permissions.Payroll.ManageRules,
            Permissions.Payroll.Read,
            Permissions.Payroll.Run,
+           Permissions.Payroll.ManageSettings,
+           Permissions.Payroll.Finalize,
+           Permissions.Payroll.ViewOwn
            
         ], assignTo:acmeAdmin);
 
@@ -314,6 +318,8 @@ public static class DevDataSeeder
            Permissions.Payroll.ManageRules,
            Permissions.Payroll.Read,
            Permissions.Payroll.Run,
+           Permissions.Payroll.ManageSettings,
+           Permissions.Payroll.Finalize
 
         ], assignTo: multiUser);
 
@@ -321,7 +327,14 @@ public static class DevDataSeeder
         [
             Permissions.Leave.Approve,
             Permissions.Leave.Request,
-            Permissions.Attendance.Clock    
+            Permissions.Attendance.Clock,
+            Permissions.Payroll.Approve,
+            Permissions.Payroll.ReadRules,
+            Permissions.Payroll.ManageRules,
+            Permissions.Payroll.Read,
+            Permissions.Payroll.Run,
+            Permissions.Payroll.ManageSettings,
+            Permissions.Payroll.Finalize
         ], assignTo: acmeHr);
     }
 

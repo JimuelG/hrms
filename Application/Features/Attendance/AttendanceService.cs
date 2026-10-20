@@ -56,7 +56,7 @@ public class AttendanceService(
             ClockInLatitude = r.Latitude,
             ClockInLongitude = r.Longitude,
             ScheduledStart = schedule?.StartTime,
-            ScheduleEnd = schedule?.EndTime,
+            ScheduledEnd = schedule?.EndTime,
             Flags = r.Flagged ? AttendanceFlags.ClockInLocationUnverified : AttendanceFlags.None
         };
 

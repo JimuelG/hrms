@@ -103,6 +103,9 @@ public sealed class EmployeeService(
         var fkError = await ValidateFofeignKeysAsync(dto.BranchId, dto.DepartmentId, dto.PositionId, dto.ManagerId, dto.ScheduleId, selfId: id, ct);
         if (fkError is not null) return ServiceResult<EmployeeDto>.Fail(fkError);
 
+        var separationError = EmployeeSeparationRules.Check((EmployeeStatus)dto.Status, dto.HireDate, dto.LastWorkingDay);
+        if (separationError is not null) return ServiceResult<EmployeeDto>.Fail(separationError);
+
         var oldStatus = employee.Status;
         var oldBranchId = employee.BranchId;
         var oldDepartmentId = employee.DepartmentId;
@@ -122,6 +125,7 @@ public sealed class EmployeeService(
         employee.HireDate = dto.HireDate;
         employee.ScheduleId = dto.ScheduleId;
         employee.Status = (EmployeeStatus)dto.Status;
+        employee.LastWorkingDay = dto.LastWorkingDay;
         
         if (oldStatus != (EmployeeStatus)dto.Status)
             timeline.Record(TimelineSubjectType.Employee, employee.Id, TimeLineEventType.StatusChanged, $"Status changed to {((EmployeeStatus)dto.Status).ToDisplayName()}", $"Previously {oldStatus.ToDisplayName()}");
@@ -190,5 +194,6 @@ public sealed class EmployeeService(
         e.ScheduleId,
         e.Schedule?.Name,
         e.CreatedAtUtc,
-        e.UserId is not null);
+        e.UserId is not null,
+        e.LastWorkingDay);
 }

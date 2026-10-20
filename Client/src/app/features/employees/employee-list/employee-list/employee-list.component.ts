@@ -115,7 +115,8 @@ export class EmployeeListComponent implements OnInit {
       scheduleId: e.scheduleId,
       employmentType: e.employmentType,
       hireDate: e.hireDate,
-      status: e.status
+      status: e.status,
+      lastWorkingDay: e.lastWorkingDay
     };
     this.formError.set(null);
     this.drawerOpen.set(true);

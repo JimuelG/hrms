@@ -28,7 +28,7 @@ public class AttendanceRecord : BaseEntity, ITenantEntity, IAuditable
     public double? ClockOutLongitude { get; set; }
 
     public TimeOnly? ScheduledStart { get; set; }
-    public TimeOnly? ScheduleEnd { get; set; }
+    public TimeOnly? ScheduledEnd { get; set; }
 
     public AttendanceFlags Flags { get; set; }
 }

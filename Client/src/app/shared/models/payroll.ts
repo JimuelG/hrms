@@ -32,6 +32,17 @@ export enum StatutoryMethod {
     Rate = 2
 }
 
+export enum PartialMonthContribution {
+    FullPeriod = 1,
+    ByDaysEmployed = 2,
+    SkipIfPartial = 3
+}
+
+export enum AdjustmentTax {
+    NonTaxable = 1,
+    Taxable = 2
+}
+
 export const RUN_STATUS_LABELS: Record<PayrollRunStatus, string> = {
     [PayrollRunStatus.Draft]: 'Draft',
     [PayrollRunStatus.Approved]: 'Approved',
@@ -56,6 +67,12 @@ export const POLICY_LABELS: Record<ContributionDeduction, string> = {
     [ContributionDeduction.SecondPeriodOnly]: 'All in the second period'
 }
 
+export const PARTIAL_LABELS: Record<PartialMonthContribution, string> = {
+    [PartialMonthContribution.FullPeriod]: 'Charge the full share',
+    [PartialMonthContribution.ByDaysEmployed]: 'Prorate by days employed',
+    [PartialMonthContribution.SkipIfPartial]: 'Skip when employed for only part of the period'
+}
+
 export function runStattusClass(s: PayrollRunStatus): string {
    switch (s) {
     case PayrollRunStatus.Draft: return 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400';
@@ -63,6 +80,11 @@ export function runStattusClass(s: PayrollRunStatus): string {
     case PayrollRunStatus.Finalized: return 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400';
     default: return 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400';
   }
+}
+
+export const ADJUSTMENT_TAX_LABELS: Record<AdjustmentTax, string> = {
+    [AdjustmentTax.NonTaxable]: 'Non-taxable',
+    [AdjustmentTax.Taxable]: 'Taxable'
 }
 
 export interface PayrollLine {
@@ -127,6 +149,7 @@ export interface PayrollSettings {
     workingDaysFactorSixDay: number;
     hoursPerDay: number;
     ordinaryOvertimeMultiplier: number;
+    partialMonthContribution: PartialMonthContribution;
 }
 
 export interface Bracket {
@@ -193,4 +216,57 @@ export interface Compensation {
     setByName: string;
     createdAtUtc: string;
     isCurrent: boolean;
+}
+
+export interface PayslipSummary {
+    runId: string;
+    periodStart: string;
+    periodEnd: string;
+    net: number;
+    finalizedAtUtc: string | null;
+}
+
+export interface Payslip {
+    runId: string;
+    runStatus: PayrollRunStatus;
+    periodStart: string;
+    periodEnd: string;
+    finalizedAtUtc: string | null;
+    companyName: string | null;
+    employeeNumber: string;
+    employeeName: string;
+    positionTitle: string | null;
+    departmentName: string | null;
+    monthlyBasic: number;
+    gross: number;
+    taxableIncome: number;
+    totalEarnings: number;
+    totalDeductions: number;
+    net: number;
+    lines: PayrollLine[];
+    notes: string[];
+}
+
+export interface RecurringItem {
+    id: string,
+    employeeId: string;
+    label: string;
+    amount: number;
+    tax: AdjustmentTax;
+    from: string;
+    to: string;
+    isActive: boolean;
+    totalOwed: number | null;
+    paidSoFar: number;
+    balance: number | null;
+}
+
+export interface RecurringItemForm {
+    employeeId: string;
+    label: string;
+    amount: number;
+    tax: AdjustmentTax;
+    from: string;
+    to: string | null;
+    totalOwed: number | null;
 }

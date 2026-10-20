@@ -11,6 +11,6 @@ export const PERMISSIONS = {
     workLocations: { read: 'worklocations.read', write: 'worklocations.write', delete: 'workschedules.delete'},
     tenant: { manageSettings: 'tenant.manage_settings'},
     leave: { request: 'leave.request', manage: 'leave.manage', approve: 'leave.approve' },
-    payroll: { read: 'payroll.read', run: 'payroll.run', approve: 'payroll.approve', finalize: 'payroll.finalize', manageSettings: 'payroll.manage_settings', readRules: 'payroll.read_rules', manageRules: 'payroll.manage_rules'},
+    payroll: { read: 'payroll.read', run: 'payroll.run', approve: 'payroll.approve', finalize: 'payroll.finalize', manageSettings: 'payroll.manage_settings', readRules: 'payroll.read_rules', manageRules: 'payroll.manage_rules', viewOwn: 'payroll.view_own'},
     compensation: { read: 'compensation.read', write: 'compensation.write' },
 } as const;

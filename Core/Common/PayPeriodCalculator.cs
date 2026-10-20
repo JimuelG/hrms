@@ -40,4 +40,11 @@ public static class PayPeriodCalculator
         var days = end.DayNumber - start.DayNumber + 1;
         return decimal.Round((decimal)days / period.Days, 10);
     }
+
+    public static (DateOnly Start, DateOnly End)? EmployedWindow(PayPeriod period, DateOnly hireDate, DateOnly? lastDay)
+    {
+        var start = hireDate > period.Start ? hireDate : period.Start;
+        var end = lastDay is DateOnly l && l < period.End ? l : period.End;
+        return end < start ? null : (start, end);
+    }
 }

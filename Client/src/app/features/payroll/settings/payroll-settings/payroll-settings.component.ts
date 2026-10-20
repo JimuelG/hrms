@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { PayrollService } from '../../../../core/services/payroll.service';
-import { ContributionDeduction, FREQUENCY_LABELS, PayFrequency, PayrollSettings, POLICY_LABELS } from '../../../../shared/models/payroll';
+import { ContributionDeduction, FREQUENCY_LABELS, PARTIAL_LABELS, PartialMonthContribution, PayFrequency, PayrollSettings, POLICY_LABELS } from '../../../../shared/models/payroll';
 import { errorMessage } from '../../../../shared/utils/api-error.util';
 
 @Component({
@@ -21,6 +21,8 @@ export class PayrollSettingsComponent implements OnInit {
   readonly policies = [ContributionDeduction.SplitEvenly, ContributionDeduction.SecondPeriodOnly];
   readonly frequencyLabel = FREQUENCY_LABELS;
   readonly policyLabel = POLICY_LABELS;
+  readonly partials = [PartialMonthContribution.FullPeriod, PartialMonthContribution.ByDaysEmployed, PartialMonthContribution.SkipIfPartial];
+  readonly partialLabel = PARTIAL_LABELS;
 
   form = signal<PayrollSettings | null>(null);
   loadError = signal<string | null>(null);

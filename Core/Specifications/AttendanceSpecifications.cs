@@ -49,3 +49,8 @@ public sealed class AttendanceQuerySpecification : BaseSpecfication<AttendanceRe
             ApplyPaging(skip.Value, take.Value);
     }
 }
+
+public sealed class AttendanceInPeriodSpecification : BaseSpecfication<AttendanceRecord>
+{
+    public AttendanceInPeriodSpecification(DateOnly from, DateOnly to) : base(a => a.Date >= from && a.Date <= to) { }
+}
