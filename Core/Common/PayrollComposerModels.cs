@@ -4,7 +4,7 @@ public enum PayrollLineKind { Earning = 1, Deduction = 2 }
 public sealed record PayrollLine(string Code, string Label, decimal Amount, PayrollLineKind Kind);
 
 public sealed record PayrollAdjustment(string Label, decimal Amount, AdjustmentTax Tax = AdjustmentTax.NonTaxable);
-public sealed record PayrollEmployeeInput(GrossInput Gross, IReadOnlyList<PayrollAdjustment> Adjustments);
+public sealed record PayrollEmployeeInput(GrossInput Gross, IReadOnlyList<PayrollAdjustment> Adjustments, YearToDate? Ytd = null);
 public sealed record PayrollOptions(PayrollSettings Settings, ContributionDeduction ContributionPolicy);
 
 public sealed record PayrollResult(

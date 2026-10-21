@@ -126,7 +126,8 @@ export interface PayrollRunSummary {
     totalNet: number;
     totalEmployerContributions: number;
     createdAtUtc: string;
-    finalizedAtUtc: string | null; 
+    finalizedAtUtc: string | null;
+    kind: number;
 }
 
 export interface PayrollRunDetail {
@@ -150,6 +151,7 @@ export interface PayrollSettings {
     hoursPerDay: number;
     ordinaryOvertimeMultiplier: number;
     partialMonthContribution: PartialMonthContribution;
+    thirteenthMonthExemptCeiling: number | null;
 }
 
 export interface Bracket {
@@ -224,6 +226,7 @@ export interface PayslipSummary {
     periodEnd: string;
     net: number;
     finalizedAtUtc: string | null;
+    kind: number;
 }
 
 export interface Payslip {
@@ -245,6 +248,8 @@ export interface Payslip {
     net: number;
     lines: PayrollLine[];
     notes: string[];
+    ytd: { gross: number; taxableIncome: number; taxWithheld: number; net: number };
+    kind: number;
 }
 
 export interface RecurringItem {

@@ -13,4 +13,5 @@ export const PERMISSIONS = {
     leave: { request: 'leave.request', manage: 'leave.manage', approve: 'leave.approve' },
     payroll: { read: 'payroll.read', run: 'payroll.run', approve: 'payroll.approve', finalize: 'payroll.finalize', manageSettings: 'payroll.manage_settings', readRules: 'payroll.read_rules', manageRules: 'payroll.manage_rules', viewOwn: 'payroll.view_own'},
     compensation: { read: 'compensation.read', write: 'compensation.write' },
+    identifiers: { read: 'identifiers.read', write: 'identifiers.write', reveal: 'identifiers.write' }
 } as const;

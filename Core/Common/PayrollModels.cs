@@ -4,6 +4,7 @@ public enum PayFrequency { SemiMonthly = 1, Monthly = 2}
 public enum PartialMonthContribution { FullPeriod = 1, ByDaysEmployed = 2, SkipIfPartial = 3 }
 public enum OvertimeDayType { Ordinary = 1, RestDay = 2, Holiday = 3 }
 public enum AdjustmentTax { NonTaxable = 1, Taxable = 2 }
+public enum TaxMethod { PerPeriod = 1, Cumulative =2 }
 
 public sealed record OvertimeBucket(OvertimeDayType DayType, int Minutes);
 public sealed record PayrollSettings(
@@ -16,7 +17,8 @@ public sealed record PayrollSettings(
     decimal? HolidayOvertimeMultiplier = null,
     bool AttendanceDeductionsEnabled = false,
     int AttendanceGraceMinutes = 0,
-    PartialMonthContribution PartialMonth = PartialMonthContribution.FullPeriod);
+    PartialMonthContribution PartialMonth = PartialMonthContribution.FullPeriod,
+    TaxMethod TaxMethod = TaxMethod.PerPeriod);
 
 public sealed record PayPeriod(DateOnly Start, DateOnly End)
 {
@@ -60,3 +62,5 @@ public sealed record AttendanceDeductionInput(
     int LateMinutes,
     int UndertimeMinutes,
     IReadOnlyList<string> Flags);
+
+public sealed record YearToDate(decimal TaxableIncome, decimal TaxWithheld);

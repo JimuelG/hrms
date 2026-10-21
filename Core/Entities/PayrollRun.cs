@@ -37,10 +37,14 @@ public class PayrollRun : BaseEntity, ITenantEntity
     public DateTime LastActivityAtUtc { get; set; } = DateTime.UtcNow;
     public byte[] RowVersion { get; set; } = default!;
     public PartialMonthContribution PartialMonthContribution { get; set; } = PartialMonthContribution.FullPeriod;
+    public TaxMethod TaxMethod { get; set; } = TaxMethod.PerPeriod;
+
+    public PayrollRunKind Kind { get; set; } = PayrollRunKind.Regular;
+    public decimal? ThirteenthMonthExemptCeiling { get; set; }
 
     public ICollection<PayrollResultRecord> Results { get; set; } = [];
     public ICollection<PayrollAdjustmentRecord> Adjustments { get; set; } = [];
 
-    public PayrollSettings ToSettings() => new(Frequency, WorkingDaysFactorFiveDay, WorkingDaysFactorSixDay, HoursPerDay, OrdinaryOvertimeMultiplier, RestDayOvertimeMultiplier, HolidayOvertimeMultiplier, AttendanceDeductionsEnabled, AttendanceGraceMinutes, PartialMonthContribution);
+    public PayrollSettings ToSettings() => new(Frequency, WorkingDaysFactorFiveDay, WorkingDaysFactorSixDay, HoursPerDay, OrdinaryOvertimeMultiplier, RestDayOvertimeMultiplier, HolidayOvertimeMultiplier, AttendanceDeductionsEnabled, AttendanceGraceMinutes, PartialMonthContribution, TaxMethod);
     public PayPeriod Period => new(PeriodStart, PeriodEnd);
 }

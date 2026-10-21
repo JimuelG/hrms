@@ -17,6 +17,7 @@ import { firstValueFrom } from 'rxjs';
 import { EmployeeLeaveBalancesComponent } from '../../employee-leave-balances/employee-leave-balances/employee-leave-balances.component';
 import { EmployeeCompensationComponent } from '../../employee-compensaion/employee-compensation/employee-compensation.component';
 import { EmployeeRecurringComponent } from '../../employee-recurring/employee-recurring/employee-recurring.component';
+import { EmployeeIdentifiersComponent } from '../../employee-identifiers/employee-identifiers/employee-identifiers.component';
 
 type Tab = 'profile' | 'contacts' | 'documents' | 'timeline';
 
@@ -29,7 +30,8 @@ type Tab = 'profile' | 'contacts' | 'documents' | 'timeline';
     DatePipe,
     EmployeeLeaveBalancesComponent,
     EmployeeCompensationComponent,
-    EmployeeRecurringComponent
+    EmployeeRecurringComponent,
+    EmployeeIdentifiersComponent
   ],
   templateUrl: './employee-detail.component.html',
   styleUrl: './employee-detail.component.scss',

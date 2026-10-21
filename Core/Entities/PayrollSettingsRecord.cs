@@ -16,7 +16,9 @@ public class PayrollSettingsRecord : BaseEntity, ITenantEntity, IAuditable
     public decimal? HolidayOvertimeMultiplier { get; set; }
     public bool AttendanceDeductionsEnabled { get; set; } = false;
     public int AttendanceGraceMinutes { get; set; } = 0;
+    public TaxMethod TaxMethod { get; set; } = TaxMethod.PerPeriod;
     public PartialMonthContribution PartialMonthContribution { get; set; } = PartialMonthContribution.FullPeriod;
+    public decimal? ThirteenthMonthExemptCeiling { get; set; }
 
-    public PayrollSettings ToSettings() => new(Frequency, WorkingDaysFactorFiveDay, WorkingDaysFactorSixDay, HoursPerDay, OrdinaryOvertimeMultiplier, RestDayOvertimeMultiplier, HolidayOvertimeMultiplier, AttendanceDeductionsEnabled, AttendanceGraceMinutes, PartialMonthContribution);
+    public PayrollSettings ToSettings() => new(Frequency, WorkingDaysFactorFiveDay, WorkingDaysFactorSixDay, HoursPerDay, OrdinaryOvertimeMultiplier, RestDayOvertimeMultiplier, HolidayOvertimeMultiplier, AttendanceDeductionsEnabled, AttendanceGraceMinutes, PartialMonthContribution, TaxMethod);
 }

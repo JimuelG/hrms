@@ -4,7 +4,8 @@ public sealed record PayslipSummaryDto(
     DateOnly PeriodStart, 
     DateOnly PeriodEnd,
     decimal Net,
-    DateTime? FinalizedAtUtc);
+    DateTime? FinalizedAtUtc,
+    int Kind);
 
 public sealed record PayslipDto(
     Guid RunId,
@@ -24,4 +25,12 @@ public sealed record PayslipDto(
     decimal TotalDeductions,
     decimal Net,
     IReadOnlyList<PayrollLineDto> Lines,
-    IReadOnlyList<string> Notes);
+    IReadOnlyList<string> Notes,
+    PayslipYtdDto Ytd,
+    int Kind);
+
+public sealed record PayslipYtdDto(
+    decimal Gros,
+    decimal TaxableIncome,
+    decimal TaxWithheld,
+    decimal Net);

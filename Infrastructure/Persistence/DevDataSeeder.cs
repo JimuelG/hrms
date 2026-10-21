@@ -263,7 +263,10 @@ public static class DevDataSeeder
            Permissions.Payroll.Run,
            Permissions.Payroll.ManageSettings,
            Permissions.Payroll.Finalize,
-           Permissions.Payroll.ViewOwn
+           Permissions.Payroll.ViewOwn,
+           Permissions.Identifiers.Read,
+           Permissions.Identifiers.Write,
+           Permissions.Identifiers.Reveal,
            
         ], assignTo:acmeAdmin);
 

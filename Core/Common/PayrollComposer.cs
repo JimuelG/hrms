@@ -5,13 +5,14 @@ public static class PayrollComposer
     {
         var settings = options.Settings;
         var frequency = settings.Frequency;
+        var requireBasis = settings.TaxMethod == TaxMethod.Cumulative ? PayFrequency.Monthly : frequency;
 
-        if (rules.Tax?.Basis is PayFrequency taxBasis && taxBasis != frequency)
-            return Fail("The withholding tax table's pay basis doesn't match the pay frequency.");
+        if (rules.Tax?.Basis is PayFrequency taxBasis && taxBasis != requireBasis)
+            return Fail("The withholding tax table's pay basis doesn't match the tax method and pay frequency.");
 
         foreach (var a in input.Adjustments)
         {
-            if (string.IsNullOrWhiteSpace(a.Label)) return Fail("Every adjusment needs a label.");
+            if (string.IsNullOrWhiteSpace(a.Label)) return Fail("Every adjustment needs a label.");
             if (a.Amount == 0m) return Fail($"The adjustment '{a.Label.Trim()}' has no amount.");
         }
 
@@ -57,8 +58,8 @@ public static class PayrollComposer
 
         if (factor < 1m && (rules.Sss is not null || rules.PhilHealth is not null || rules.PagIbig is not null))
             notes.Add(settings.PartialMonth == PartialMonthContribution.SkipIfPartial
-                ? "No contribution were taken, because the employee wasn't employed for the whole period."
-                : $"Contributions were prorated to {fraction:P0}, matching they days employed.");
+                ? "No contributions were taken, because the employee wasn't employed for the whole period."
+                : $"Contributions were prorated to {fraction:P0}, matching the days employed.");
 
         var taxable = Math.Max(0m, gross.Gross - employeeContributions + AdjustmentRules.TaxableEffect(input.Adjustments));
 
@@ -68,7 +69,19 @@ public static class PayrollComposer
         }
         else
         {
-            var tax = StatutoryCalculator.Compute(rules.Tax, taxable).Employee;
+            decimal tax;
+            if (settings.TaxMethod == TaxMethod.Cumulative)
+            {
+                var ytd = input.Ytd ?? new YearToDate(0m, 0m);
+                var cumulative = StatutoryCalculator.Compute(rules.Tax, ytd.TaxableIncome + taxable).Employee;
+                tax = CumulativeTax.ThisPeriod(cumulative, ytd.TaxWithheld);
+                notes.Add($"Tax is cumulative: year-to-date taxable income {ytd.TaxableIncome + taxable:N2}, " +
+                          $"tax withheld before this period {ytd.TaxWithheld:N2}.");
+            }
+            else
+            {
+                tax = StatutoryCalculator.Compute(rules.Tax, taxable).Employee;
+            }
             if (tax > 0m) lines.Add(new("TAX", "Withholding tax", tax, PayrollLineKind.Deduction));
         }
 

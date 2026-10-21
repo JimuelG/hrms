@@ -4,6 +4,7 @@ using API.Middleware;
 using Application;
 using Infrastructure;
 using Infrastructure.Persistence;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,6 +30,12 @@ builder.Services.AddCors(options =>
             
 });
 builder.Services.AddApplication();
+
+var keysPath = builder.Configuration["DataProtection:KeysPath"]
+                ?? Path.Combine(builder.Environment.ContentRootPath, "keys");
+builder.Services.AddDataProtection()
+    .SetApplicationName("hrms")
+    .PersistKeysToFileSystem(new DirectoryInfo(keysPath));
 
 var app = builder.Build();
 

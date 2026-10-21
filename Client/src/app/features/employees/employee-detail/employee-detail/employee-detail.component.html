@@ -117,6 +117,10 @@
         @if (permissions.can(P.payroll.run)) {
           <app-employee-recurring [employeeId]="employeeId" />
         }
+
+        @if (permissions.can(P.identifiers.read)) {
+          <app-employee-identifiers [employeeId]="employeeId" />
+        }
       </div>
     }
 

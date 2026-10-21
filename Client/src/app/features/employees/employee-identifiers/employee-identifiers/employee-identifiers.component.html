@@ -1,0 +1,85 @@
+<div class="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800">
+  <div class="flex items-center justify-between mb-3">
+    <div class="text-xs font-medium text-slate-500 dark:text-slate-400">Government IDs and bank details</div>
+    <div class="flex items-center gap-3">
+      @if (permissions.can(P.identifiers.reveal)) {
+        <button (click)="toggleLog()" class="text-xs font-medium text-slate-500 dark:text-slate-400 hover:underline">{{ log() ? 'Hide access log' : 'Access log' }}</button>
+      }
+      @if (permissions.can(P.identifiers.write)) {
+        <button (click)="openForm()" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline"><i class="fa-solid fa-pen text-[10px]"></i> Edit</button>
+      }
+    </div>
+  </div>
+
+  @if (error()) { <div class="text-red-600 dark:text-red-400 text-sm mb-2">{{ error() }}</div> }
+
+  @if (ids(); as d) {
+    <dl class="space-y-1.5">
+      @for (f of fields; track f.key) {
+        <div class="flex items-center justify-between gap-3 border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2">
+          <div class="min-w-0">
+            <dt class="text-xs text-slate-500 dark:text-slate-400">{{ f.label }}</dt>
+            <dd class="text-sm font-mono tabular-nums break-all">
+              @if (revealed()[f.key]; as full) { {{ full }} } @else { {{ d[f.key] || '—' }} }
+            </dd>
+          </div>
+          @if (d[f.key] && permissions.can(P.identifiers.reveal)) {
+            @if (revealed()[f.key]) {
+              <button (click)="hide(f.key)" class="text-xs font-medium text-slate-500 hover:underline shrink-0">Hide</button>
+            } @else {
+              <button (click)="reveal(f)" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline shrink-0">Reveal</button>
+            }
+          }
+        </div>
+      }
+      <div class="grid sm:grid-cols-2 gap-1.5">
+        <div class="border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2"><dt class="text-xs text-slate-500 dark:text-slate-400">Bank</dt><dd class="text-sm">{{ d.bankName || '—' }}</dd></div>
+        <div class="border border-slate-200 dark:border-slate-800 rounded-md px-3 py-2"><dt class="text-xs text-slate-500 dark:text-slate-400">Account name</dt><dd class="text-sm">{{ d.bankAccountName || '—' }}</dd></div>
+      </div>
+    </dl>
+  } @else {
+    <p class="text-sm text-slate-400">@if (loading()) { Loading… }</p>
+  }
+  <p class="text-xs text-slate-400 mt-2">Numbers are stored encrypted and shown masked. A revealed number hides itself after 15 seconds, and every reveal is logged.</p>
+
+  @if (log(); as entries) {
+    <div class="mt-3 border border-slate-200 dark:border-slate-800 rounded-md divide-y divide-slate-100 dark:divide-slate-800">
+      @for (e of entries; track $index) {
+        <div class="px-3 py-2 text-xs flex justify-between gap-3">
+          <span>{{ actionLabel[e.action] }} · {{ fieldName(e.field) }} · {{ e.userName }}</span>
+          <span class="text-slate-400 shrink-0">{{ e.createdAtUtc | date:'MMM d, y, h:mm a' }}</span>
+        </div>
+      } @empty { <p class="px-3 py-3 text-xs text-slate-400">Nothing has been revealed or changed yet.</p> }
+    </div>
+  }
+</div>
+
+@if (formOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="formOpen.set(false)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5 max-h-[90vh] overflow-y-auto">
+    <h2 class="font-semibold text-sm mb-1">Edit IDs and bank details</h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Leave a number blank to keep what is stored. Spaces and dashes are fine.</p>
+    @if (formError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ formError() }}</div> }
+    <div class="space-y-3">
+      @for (f of fields; track f.key) {
+        <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">{{ f.label }} <span class="font-normal text-slate-400">({{ f.hint }})</span></span>
+          <div class="flex items-center gap-2">
+            <input [(ngModel)]="form[f.key]" [name]="f.key" [disabled]="clearing().has(f.key)" autocomplete="off"
+              [placeholder]="clearing().has(f.key) ? 'Will be cleared' : (ids()?.[f.key] ? 'Unchanged' : 'Not set')"
+              class="flex-1 font-mono border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:opacity-60" />
+            @if (ids()?.[f.key]) {
+              <button type="button" (click)="toggleClear(f.key)" class="text-xs font-medium text-red-600 dark:text-red-400 hover:underline shrink-0">{{ clearing().has(f.key) ? 'Undo' : 'Clear' }}</button>
+            }
+          </div></label>
+      }
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Bank</span>
+        <input [(ngModel)]="form.bankName" name="bankName" maxlength="100" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Account name</span>
+        <input [(ngModel)]="form.bankAccountName" name="bankAccountName" maxlength="150" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="formOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="save()" [disabled]="saving()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">{{ saving() ? 'Saving…' : 'Save' }}</button>
+    </div>
+  </div>
+}

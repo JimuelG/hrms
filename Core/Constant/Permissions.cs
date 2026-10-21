@@ -122,6 +122,13 @@ public static class Permissions
         public const string ViewOwn = "payroll.view_own";
     }
 
+    public static class Identifiers
+    {
+        public const string Read = "identifiers.read";
+        public const string Write = "identifiers.write";
+        public const string Reveal = "identifiers.reveal";
+    }
+
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
         (Employees.Read, "Employees", "View employee records"),
@@ -175,5 +182,9 @@ public static class Permissions
         (Payroll.Finalize, "Payroll", "Finalize payroll runs, which locks them permanently"),
         (Payroll.ManageSettings, "Payroll", "Change payroll settings such as pay frequency"),
         (Payroll.ViewOwn, "Payroll", "View your own finalized payslips"),
+        (Identifiers.Read, "Employees", "View masked government IDs and bank details"),
+        (Identifiers.Write, "Employees", "Set government IDs and bank details"),
+        (Identifiers.Reveal, "Employees", "Reveal full government IDs and bank details"),
+
     ];
 }

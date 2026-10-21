@@ -48,11 +48,11 @@ public class PayrollRunsController(IPayrollRunService service) : BaseApiControll
     [HasPermission(Permissions.Payroll.Read)]
     [HttpGet("{id:guid}/adjustments")]
     public async Task<IActionResult> Adjusments(Guid id, CancellationToken ct) => 
-        (await service.GetAdjusmentsAsync(id, ct)).ToActionResult(this);
+        (await service.GetAdjustmentsAsync(id, ct)).ToActionResult(this);
 
     [HasPermission(Permissions.Payroll.Run)]
     [HttpPost("{id:guid}/adjustments")]
-    public async Task<IActionResult> AddAdjustment(Guid id, AddAdjusmentDto dto, CancellationToken ct)
+    public async Task<IActionResult> AddAdjustment(Guid id, AddAdjustmentDto dto, CancellationToken ct)
     {
         if (!TryGetUserId(out var userId)) return Unauthorized();
         return (await service.AddAdjustmentAsync(userId, id, dto, ct)).ToActionResult(this);
@@ -107,4 +107,11 @@ public class PayrollRunsController(IPayrollRunService service) : BaseApiControll
     public async Task<IActionResult> UpdateSettings(UpdatePayrollSettingsDto dto, CancellationToken ct) =>
         (await service.UpdateSettingsAsync(dto, ct)).ToActionResult(this);
 
+    [HasPermission(Permissions.Payroll.Run)]
+    [HttpPost("thirteenth-month")]
+    public async Task<IActionResult> StartThirteenth(StartThirteenthDto dto, CancellationToken ct)
+    {
+        if (!TryGetUserId(out var userId)) return Unauthorized();
+        return (await service.StartThirteenthAsync(userId, dto, ct)).ToActionResult(this, isCreate: true);
+    }
 }

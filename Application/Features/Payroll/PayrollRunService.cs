@@ -25,7 +25,7 @@ public class PayrollRunService(
     IGenericRepository<AttendanceRecord> attendance,
     IGenericRepository<RecurringPayrollItem> recurring,
     IGenericRepository<PayrollLoanApplication> loanApplications,
-    IGenericRepository<LoanRepayment> loanRayments,
+    IGenericRepository<LoanRepayment> loanRepayments,
     ILeaveCalculationService leaveCalculation,
     IStatutoryService statutory,
     ITimeZoneResolver zones,
@@ -95,7 +95,10 @@ public class PayrollRunService(
             HolidayOvertimeMultiplier = settings.HolidayOvertimeMultiplier,
             CreatedByUserId = actorUserId,
             LastActivityAtUtc = clock.GetUtcNow().UtcDateTime,
+            AttendanceDeductionsEnabled = settings.AttendanceDeductionsEnabled,
+            AttendanceGraceMinutes = settings.AttendanceGraceMinutes,
             PartialMonthContribution = settings.PartialMonthContribution,
+            TaxMethod = settings.TaxMethod,
         };
 
         runs.Add(run);
@@ -119,7 +122,8 @@ public class PayrollRunService(
             .GroupBy(c => c.EmployeeId)
             .ToDictionary(g => g.Key, g => (IReadOnlyList<SalaryPoint>)g.Select(c => new SalaryPoint(c.EffectiveFrom, c.MonthlyBasicSalary)).ToList());
 
-        var rules = await statutory.LoadInForceAsync(period.End, run.Frequency, ct);
+        var taxBasis = settings.TaxMethod == TaxMethod.Cumulative ? PayFrequency.Monthly : run.Frequency;
+        var rules = await statutory.LoadInForceAsync(period.End, taxBasis, ct);
 
         var adjustments = (await runs.GetEntityWithSpec(new PayrollRunByIdSpecification(run.Id, withAdjustments: true), ct))?.Adjustments ?? run.Adjustments;
 
@@ -148,6 +152,19 @@ public class PayrollRunService(
             .GroupBy(r => r.EmployeeId).ToDictionary(g => g.Key, g => g.ToList());
 
         var companyDays = (await tenantSettings.GetEntityWithSpec(new TenantSettingsSpecification(), ct))?.WorkingDays ?? new TenantSettings().WorkingDays;
+
+        var ytdByEmployee = new Dictionary<Guid, YearToDate>();
+        if (settings.TaxMethod == TaxMethod.Cumulative)
+        {
+            var earlier = await results.ListAsync(new FinalizedResultsInYearSpecification(period.End.Year, period.Start), ct);
+
+            ytdByEmployee = earlier
+                .GroupBy(r => r.EmployeeId)
+                .ToDictionary(g => g.Key, g => new YearToDate(
+                    g.Sum(r => r.TaxableIncome),
+                    g.Sum(r => ResultSnapshot.Read(r.LinesJson, new List<PayrollLine>())
+                        .Where(l => l.Code == "TAX").Sum(l => l.Amount))));
+        }
 
         foreach (var person in people)
         {
@@ -244,14 +261,14 @@ public class PayrollRunService(
                 personAdjustments.Add(new PayrollAdjustment(rule.Label, amount, rule.Tax));
             }
 
-            var gross = new GrossInput(personHistory ?? [], person.HireDate, person.LastWorkingDay, period, perWeek, unpaidDays, OvertimeClassifier.Bucket(items));
+            var gross = new GrossInput(personHistory ?? [], person.HireDate, person.LastWorkingDay, period, perWeek, unpaidDays, OvertimeClassifier.Bucket(items), attendanceInput);
 
             var separatedWithoutDate = person.LastWorkingDay is null
-                && person.Status is EmployeeStatus.Resigned or EmployeeStatus.Terminated;
+                && (person.Status is EmployeeStatus.Resigned or EmployeeStatus.Terminated);
 
             var composed = separatedWithoutDate
                 ? PayrollComposer.Failure("This employee is marked as separated but has no last working day. Set it on their profile.")
-                : PayrollComposer.Compose(new PayrollEmployeeInput(gross, adjustmentsByEmployee.GetValueOrDefault(person.Id) ?? []), options, rules);
+                : PayrollComposer.Compose(new PayrollEmployeeInput(gross, personAdjustments, ytdByEmployee.GetValueOrDefault(person.Id)), options, rules);
 
             if (composed.Error is null && checks.Count > 0)
                 composed = composed with { Warnings = composed.Warnings.Concat(checks).ToList() };
@@ -341,13 +358,14 @@ public class PayrollRunService(
         run.PeriodEnd,
         (int)run.Status,
         rows.Count,
-        rows.Count(r => r.ErrorMessage is null),
+        rows.Count(r => r.ErrorMessage is not null),
         rows.Sum(r => r.Gross),
         rows.Sum(r => r.TotalDeductions),
         rows.Sum(r => r.Net),
         rows.Sum(r => r.EmployerContributions),
         run.CreatedAtUtc,
-        run.FinalizedAtUtc);
+        run.FinalizedAtUtc,
+        (int)run.Kind);
 
     private static PayrollResultDto ToDto(PayrollResultRecord r) => new(
         r.Id,
@@ -368,7 +386,7 @@ public class PayrollRunService(
         ResultSnapshot.Read(r.WarningsJson, new List<string>()),
         r.ErrorMessage);
 
-    public async Task<ServiceResult<IReadOnlyList<PayrollAdjustmentDto>>> GetAdjusmentsAsync(Guid runId, CancellationToken ct = default)
+    public async Task<ServiceResult<IReadOnlyList<PayrollAdjustmentDto>>> GetAdjustmentsAsync(Guid runId, CancellationToken ct = default)
     {
         var run = await runs.GetEntityWithSpec(new PayrollRunByIdSpecification(runId, withAdjustments: true), ct);
         if (run is null) return ServiceResult<IReadOnlyList<PayrollAdjustmentDto>>.Fail("Payroll run not found.", ServiceErrorType.NotFound);
@@ -376,7 +394,7 @@ public class PayrollRunService(
             run.Adjustments.Select(a => new PayrollAdjustmentDto(a.Id, a.EmployeeId, a.Label, a.Amount, (int)a.Tax)).ToList());
     }
 
-    public async Task<ServiceResult<PayrollRunDetailDto>> AddAdjustmentAsync(Guid actorUserId, Guid runId, AddAdjusmentDto dto, CancellationToken ct = default)
+    public async Task<ServiceResult<PayrollRunDetailDto>> AddAdjustmentAsync(Guid actorUserId, Guid runId, AddAdjustmentDto dto, CancellationToken ct = default)
     {
         var run = await runs.GetEntityWithSpec(new PayrollRunByIdSpecification(runId), ct);
         if (run is null) return Fail("Payroll run not found.", ServiceErrorType.NotFound);
@@ -444,12 +462,12 @@ public class PayrollRunService(
         var run = await runs.GetEntityWithSpec(new PayrollRunByIdSpecification(runId), ct);
         if (run is null) return Fail("Payroll run not found.", ServiceErrorType.NotFound);
         if (!PayrollRunRules.CanMove(run.Status, PayrollRunStatus.Draft)) return Fail("Only an approved run can be sent back.", ServiceErrorType.Conflict);
-        if (string.IsNullOrWhiteSpace(reason)) return Fail("Say why it is being send back.");
+        if (string.IsNullOrWhiteSpace(reason)) return Fail("Say why it is being sent back.");
 
         run.Status = PayrollRunStatus.Draft;
         run.ApprovedByUserId = null;
         run.ApprovedAtUtc = null;
-        run.Notes = AppendNote(run.Notes, $"Send back: {reason.Trim()}");
+        run.Notes = AppendNote(run.Notes, $"Sent back: {reason.Trim()}");
         run.LastActivityAtUtc = clock.GetUtcNow().UtcDateTime;
         await unit.Complete();
 
@@ -482,7 +500,7 @@ public class PayrollRunService(
         foreach (var app in applications)
         {
             loans[app.RecurringPayrollItemId].PaidSoFar += app.Amount;
-            loanRayments.Add(new LoanRepayment
+            loanRepayments.Add(new LoanRepayment
             {
                 RecurringPayrollItemId = app.RecurringPayrollItemId,
                 PayrollRunId = runId,
@@ -530,6 +548,12 @@ public class PayrollRunService(
         if (!Enum.IsDefined(typeof(PartialMonthContribution), dto.PartialMonthContribution))
             return ServiceResult<PayrollSettingsDto>.Fail("Choose a valid rule for the partial months.");
 
+        if (!Enum.IsDefined(typeof(TaxMethod), dto.TaxMethod))
+            return ServiceResult<PayrollSettingsDto>.Fail("Choose a valid tax method.");
+
+        if ((TaxMethod)dto.TaxMethod == TaxMethod.Cumulative && (PayFrequency)dto.Frequency != PayFrequency.Monthly)
+            return ServiceResult<PayrollSettingsDto>.Fail("Cumulative tax needs monthly pay in this version. Set the pay frequency to Monthly, or use per-period tax.");
+
         var settings = await GetOrCreateSettingsAsync(ct);
         settings.Frequency = (PayFrequency)dto.Frequency;
         settings.ContributionPolicy = (ContributionDeduction)dto.ContributionPolicy;
@@ -539,10 +563,60 @@ public class PayrollRunService(
         settings.OrdinaryOvertimeMultiplier = dto.OrdinaryOvertimeMultiplier;
         settings.RestDayOvertimeMultiplier = dto.RestDayOvertimeMultiplier;
         settings.HolidayOvertimeMultiplier = dto.HolidayOvertimeMultiplier;
+        settings.AttendanceDeductionsEnabled = dto.AttendanceDeductionsEnabled;
+        settings.AttendanceGraceMinutes = dto.AttendanceGraceMinutes;
         settings.PartialMonthContribution = (PartialMonthContribution)dto.PartialMonthContribution;
+        settings.TaxMethod = (TaxMethod)dto.TaxMethod;
+        settings.ThirteenthMonthExemptCeiling = dto.ThirteenthMonthExemptCeiling;
         await unit.Complete();
 
         return ServiceResult<PayrollSettingsDto>.Success(ToDto(settings));
+    }
+
+    public async Task<ServiceResult<PayrollRunDetailDto>> StartThirteenthAsync(Guid actorUserId, StartThirteenthDto dto, CancellationToken ct = default)
+    {
+        var settings = await GetOrCreateSettingsAsync(ct);
+        var cutoff = dto.CutoffDate ?? new DateOnly(dto.Year, 12, 31);
+
+        var error = ThirteenthMonthRules.CheckPeriod(dto.Year, cutoff, await TodayAsync(ct));
+        if (error is not null) return Fail(error);
+
+        var existing = (await runs.ListAsync(new ThirteenthRunsInYearSpecification(dto.Year), ct))
+            .Select(r => (r.PeriodEnd, r.Status));
+        error = ThirteenthMonthRules.CheckExisting(existing, cutoff);
+        if (error is not null) return Fail(error, ServiceErrorType.Conflict);
+
+        var start = new DateOnly(dto.Year, 1, 1);
+        if (await results.CountAsync(new FinalizedRegularResultsThroughSpecification(start, cutoff), ct) == 0)
+            return Fail($"No finalized payroll runs were found for {dto.Year} up to {cutoff:yyyy-MM-dd}. Finalize the regular runs first.");
+
+        var run = new PayrollRun
+        {
+            Kind = PayrollRunKind.ThirteenthMonth,
+            PeriodStart = start, 
+            PeriodEnd = cutoff, 
+            Status = PayrollRunStatus.Draft,
+            Frequency = settings.Frequency,
+            ContributionPolicy = settings.ContributionPolicy,
+            WorkingDaysFactorFiveDay = settings.WorkingDaysFactorFiveDay,
+            WorkingDaysFactorSixDay = settings.WorkingDaysFactorSixDay,
+            HoursPerDay = settings.HoursPerDay,
+            OrdinaryOvertimeMultiplier = settings.OrdinaryOvertimeMultiplier,
+            RestDayOvertimeMultiplier = settings.RestDayOvertimeMultiplier, 
+            HolidayOvertimeMultiplier = settings.HolidayOvertimeMultiplier,
+            AttendanceDeductionsEnabled = settings.AttendanceDeductionsEnabled, 
+            AttendanceGraceMinutes = settings.AttendanceGraceMinutes,
+            PartialMonthContribution = settings.PartialMonthContribution, 
+            TaxMethod = settings.TaxMethod,
+            ThirteenthMonthExemptCeiling = settings.ThirteenthMonthExemptCeiling,
+            CreatedByUserId = actorUserId, LastActivityAtUtc = clock.GetUtcNow().UtcDateTime
+        };
+        runs.Add(run);
+
+        await ComputeThirteenthAsync(run, ct);
+        await unit.Complete();
+
+        return ServiceResult<PayrollRunDetailDto>.Success(await DetailAsync(run, ct));
     }
 
     private static PayrollSettingsDto ToDto(PayrollSettingsRecord s) => new(
@@ -554,7 +628,11 @@ public class PayrollRunService(
         s.OrdinaryOvertimeMultiplier,
         s.RestDayOvertimeMultiplier,
         s.HolidayOvertimeMultiplier,
-        (int)s.PartialMonthContribution);
+        s.AttendanceDeductionsEnabled,
+        s.AttendanceGraceMinutes,
+        (int)s.PartialMonthContribution,
+        (int)s.TaxMethod,
+        s.ThirteenthMonthExemptCeiling);
 
     private static string AppendNote(string? existing, string line) =>
         string.IsNullOrEmpty(existing) ? line : $"{existing}\n{line}";
@@ -591,5 +669,80 @@ public class PayrollRunService(
         }
 
         return dates;
+    }
+
+    private async Task ComputeThirteenthAsync(PayrollRun run, CancellationToken ct)
+    {
+        var cutoff = run.PeriodEnd;
+        var year = cutoff.Year;
+
+        var regular = await results.ListAsync(new FinalizedRegularResultsThroughSpecification(run.PeriodStart, cutoff), ct);
+        var earnedBy = regular.GroupBy(r => r.EmployeeId).ToDictionary(g => g.Key,
+            g => g.Sum(r => ThirteenthMonthRules.BasicEarned(ResultSnapshot.Read(r.LinesJson, new List<PayrollLine>()))));
+
+        var prior = await results.ListAsync(new FinalizedThirteenthResultsSpecification(year, cutoff), ct);
+        var paidBy = prior.GroupBy(r => r.EmployeeId).ToDictionary(g => g.Key,
+                g => (Paid: g.Sum(r => r.Gross), Exempt: g.Sum(r => r.Gross - r.TaxableIncome)));
+
+        var ytdBy = new Dictionary<Guid, YearToDate>();
+        RuleSetData? taxRule = null;
+        if (run.TaxMethod == TaxMethod.Cumulative)
+        {
+            taxRule = (await statutory.LoadInForceAsync(cutoff, PayFrequency.Monthly, ct)).Tax;
+            var earlier = await results.ListAsync(new FinalizedResultsInYearSpecification(year, cutoff.AddDays(1)), ct);
+            ytdBy = earlier.GroupBy(r => r.EmployeeId).ToDictionary(g => g.Key, g => new YearToDate(
+                g.Sum(r =>  r.TaxableIncome),
+                g.Sum(r => ResultSnapshot.Read(r.LinesJson, new List<PayrollLine>()).Where(l => l.Code == "TAX").Sum(l => l.Amount))));
+        }
+
+        var adjustments = (await runs.GetEntityWithSpec(new PayrollRunByIdSpecification(run.Id, withAdjustments: true), ct))?.Adjustments
+                            ?? run.Adjustments;
+
+        var adjustmentsBy = adjustments.GroupBy(a => a.EmployeeId).ToDictionary(g => g.Key,
+            g => (IReadOnlyList<PayrollAdjustment>)g.Select(a => new PayrollAdjustment(a.Label, a.Amount, a.Tax)).ToList());
+
+        var ids = earnedBy.Keys.Union(paidBy.Keys).ToList();
+        foreach (var person in await employees.ListAsync(new EmployeesByIdsForPayrollSpecification(ids), ct))
+        {
+            var earned = earnedBy.GetValueOrDefault(person.Id);
+            var (paid, exemptUsed) = paidBy.GetValueOrDefault(person.Id);
+            if (earned == 0m && paid == 0m) continue;
+
+            var amount = ThirteenthMonthCalculator.Calculate(new(earned, paid, exemptUsed, run.ThirteenthMonthExemptCeiling));
+            var composed = ThirteenthMonthComposer.Compose(amount, adjustmentsBy.GetValueOrDefault(person.Id) ?? [], run.TaxMethod, taxRule, ytdBy.GetValueOrDefault(person.Id));
+
+            results.Add(ToThirteenthRecord(run, person, composed, new ThirteenthInputsSnapshot(earned, paid, amount.Entitlement)));
+        }
+    }
+
+    private static PayrollResultRecord ToThirteenthRecord(PayrollRun run, Employee person, PayrollResult r, ThirteenthInputsSnapshot inputs)
+    {
+        var record = new PayrollResultRecord
+        {
+            PayrollRunId = run.Id, 
+            EmployeeId = person.Id, 
+            EmployeeNumber = person.EmployeeNumber,
+            EmployeeName = $"{person.FirstName} {person.LastName}",
+            DepartmentName = person.Department?.Name, 
+            PositionTitle = person.Position?.Title
+        };
+        record.Run = run;
+
+        if (r.Error is not null)
+        {
+            record.ErrorMessage = r.Error;
+            return record;
+        }
+
+        record.Gross = r.Gross;              
+        record.TaxableIncome = r.TaxableIncome;
+        record.TotalEarnings = r.TotalEarnings;
+        record.TotalDeductions = r.TotalDeductions;
+        record.Net = r.Net;
+        record.LinesJson = ResultSnapshot.Write(r.Lines);
+        record.NotesJson = ResultSnapshot.Write(r.Notes);
+        record.WarningsJson = ResultSnapshot.Write(r.Warnings);
+        record.InputsJson = ResultSnapshot.Write(inputs);
+        return record;
     }
 }

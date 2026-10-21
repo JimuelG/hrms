@@ -125,4 +125,8 @@ export class PayrollService {
   deactivateRecurring(id: string): Observable<RecurringItem> {
     return this.http.post<RecurringItem>(`${this.payrollBase}/recurring-items/${id}/deactivate`, {});
   }
+
+  startThirteenth(year: number, cutoffDate: string): Observable<PayrollRunDetail> {
+    return this.http.post<PayrollRunDetail>(`${this.runs}/thirteenth-month`, { year, cutoffDate });
+  }
 }

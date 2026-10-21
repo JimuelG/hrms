@@ -7,6 +7,7 @@ using Infrastructure.Features;
 using Infrastructure.Features.Platform;
 using Infrastructure.Identity;
 using Infrastructure.Persistence;
+using Infrastructure.Security;
 using Infrastructure.Storage;
 using Infrastructure.Tenancy;
 using Microsoft.AspNetCore.Identity;
@@ -45,6 +46,8 @@ public static class DependencyInjecttion
 
         services.AddScoped<IPermissionDirectory, PermissionDirectory>();
         services.AddScoped<ITenantNameProvider, TenantNameProvider>();
+
+        services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
         
         services.AddOptions<JwtOptions>()
             .Bind(config.GetSection(JwtOptions.Section))

@@ -52,7 +52,9 @@ public sealed class PayrollRunsSpecification : BaseSpecfication<PayrollRun>
 
 public sealed class PayrollRunByPeriodSpecification : BaseSpecfication<PayrollRun>
 {
-    public PayrollRunByPeriodSpecification(DateOnly start, DateOnly end) : base(r => r.PeriodStart == start && r.PeriodEnd == end && r.Status != PayrollRunStatus.Cancelled) { }
+    public PayrollRunByPeriodSpecification(DateOnly start, DateOnly end) 
+        : base(r => r.PeriodStart == start && r.PeriodEnd == end && r.Status != PayrollRunStatus.Cancelled
+            && r.Kind == PayrollRunKind.Regular) { }
 }
 
 public sealed class PayrollResultsByRunSpecification : BaseSpecfication<PayrollResultRecord>
@@ -155,4 +157,61 @@ public sealed class RecurringItemsByIdsSpecification : BaseSpecfication<Recurrin
 public sealed class LoanApplicationsByRunSpecification : BaseSpecfication<PayrollLoanApplication>
 {
     public LoanApplicationsByRunSpecification(Guid runId) : base(a => a.PayrollRunId == runId) { }
+}
+
+public sealed class FinalizedResultsInYearSpecification : BaseSpecfication<PayrollResultRecord>
+{
+    public FinalizedResultsInYearSpecification(int year, DateOnly before)
+        : base(r => r.Run.Status == PayrollRunStatus.Finalized && r.ErrorMessage == null
+                && r.Run.PeriodEnd.Year == year && r.Run.PeriodEnd < before)
+    {
+        AddInclude(r => r.Run);
+    }
+}
+
+public sealed class FinalizedResultsForEmployeeInYearSpecification : BaseSpecfication<PayrollResultRecord>
+{
+    public FinalizedResultsForEmployeeInYearSpecification(Guid employeeId, int year, DateOnly before)
+        : base(r => r.EmployeeId == employeeId && r.Run.Status == PayrollRunStatus.Finalized && r.ErrorMessage == null
+                && r.Run.PeriodEnd.Year == year && r.Run.PeriodEnd < before)
+    {
+        AddInclude(r => r.Run);
+    }
+}
+
+public sealed class ThirteenthRunsInYearSpecification : BaseSpecfication<PayrollRun>
+{
+    public ThirteenthRunsInYearSpecification(int year)
+        : base(r => r.Kind == PayrollRunKind.ThirteenthMonth && r.Status != PayrollRunStatus.Cancelled
+            && r.PeriodEnd.Year == year) { }
+}
+
+public sealed class FinalizedRegularResultsThroughSpecification : BaseSpecfication<PayrollResultRecord>
+{
+    public FinalizedRegularResultsThroughSpecification(DateOnly from, DateOnly through)
+        : base(r => r.Run.Status == PayrollRunStatus.Finalized && r.Run.Kind == PayrollRunKind.Regular
+                && r.ErrorMessage == null && r.Run.PeriodStart >= from && r.Run.PeriodEnd <= through)
+    {
+        AddInclude(r => r.Run);
+    }
+}
+
+public sealed class FinalizedThirteenthResultsSpecification : BaseSpecfication<PayrollResultRecord>
+{
+    public FinalizedThirteenthResultsSpecification(int year, DateOnly before)
+        : base(r => r.Run.Status == PayrollRunStatus.Finalized && r.Run.Kind == PayrollRunKind.ThirteenthMonth
+                && r.ErrorMessage == null && r.Run.PeriodEnd.Year == year && r.Run.PeriodEnd < before)
+    {
+        AddInclude(r => r.Run);
+    }
+}
+
+public sealed class EmployeesByIdsForPayrollSpecification : BaseSpecfication<Employee>
+{
+    public EmployeesByIdsForPayrollSpecification(List<Guid> ids) : base(e => ids.Contains(e.Id))
+    {
+        AddInclude(e => e.Department);
+        AddInclude(e => e.Position);
+        AddOrderBy(e => e.LastName);
+    }
 }

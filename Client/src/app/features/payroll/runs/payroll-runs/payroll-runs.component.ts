@@ -39,6 +39,11 @@ export class PayrollRunsComponent implements OnInit {
   startError = signal<string | null>(null);
   starting = signal(false);
 
+  thirteenthOpen = signal(false);
+  cutoff = '';
+  thirteenthError = signal<string | null>(null);
+  thirteenthBusy = signal(false);
+
   ngOnInit(): void {
     void this.load();
   }
@@ -92,6 +97,29 @@ export class PayrollRunsComponent implements OnInit {
       this.startError.set(errorMessage(err));
     } finally {
       this.starting.set(false);
+    }
+  }
+
+  openThirteenth(): void {
+    const t = new Date();
+    const last = new Date(t.getFullYear(), t.getMonth(), 0);
+    this.cutoff = `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}-${String(last.getDate()).padStart(2, '0')}`;
+    this.thirteenthError.set(null);
+    this.thirteenthOpen.set(true);
+  }
+
+  async submitThirteenth(): Promise<void> {
+    if (!this.cutoff) { this.thirteenthError.set('Choose the cutoff date.'); return; }
+    this.thirteenthBusy.set(true);
+    this.thirteenthError.set(null);
+    try {
+      const d = await firstValueFrom(this.payroll.startThirteenth(Number(this.cutoff.slice(0, 4)), this.cutoff));
+      this.thirteenthOpen.set(false);
+      await this.router.navigate(['/payroll/runs', d.run.id]);
+    } catch (err) {
+      this.thirteenthError.set(errorMessage(err));
+    } finally {
+      this.thirteenthBusy.set(false);
     }
   }
 }

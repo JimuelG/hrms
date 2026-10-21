@@ -38,7 +38,9 @@ public sealed record PayrollRunSummaryDto(
     decimal TotalNet,
     decimal TotalEmployerContributions,
     DateTime CreatedAtUtc,
-    DateTime? FinalizedAtUtc);
+    DateTime? FinalizedAtUtc,
+    int Kind
+    );
 
 public sealed record PayrollRunDetailDto(PayrollRunSummaryDto Run, IReadOnlyList<PayrollResultDto> Results);
 
@@ -52,7 +54,7 @@ public sealed class StartRunDto
     public string? Notes { get; init; }
 }
 
-public sealed class AddAdjusmentDto
+public sealed class AddAdjustmentDto
 {
     [Required]
     public Guid? EmployeeId { get; init; }
@@ -79,7 +81,11 @@ public sealed record PayrollSettingsDto(
     decimal OrdinaryOvertimeMultiplier,
     decimal? RestDayOvertimeMultiplier,
     decimal? HolidayOvertimeMultiplier,
-    int PartialMonthContribution);
+    bool AttendanceDeductionsEnabled,
+    int AttendanceGraceMinutes,
+    int PartialMonthContribution,
+    int TaxMethod,
+    decimal? ThirteenthMonthExemptCeiling);
 
 public sealed class UpdatePayrollSettingsDto
 {
@@ -93,9 +99,17 @@ public sealed class UpdatePayrollSettingsDto
     public decimal HoursPerDay { get; init; }
     [Range(1, 5)]
     public decimal OrdinaryOvertimeMultiplier { get; init; }
+    [Range(1, 5)]
     public decimal? RestDayOvertimeMultiplier { get; init; }
+    [Range(1, 5)]
     public decimal? HolidayOvertimeMultiplier { get; init; }
+    public bool AttendanceDeductionsEnabled { get; init; }
+    [Range(0, 120)]
+    public int AttendanceGraceMinutes { get; init; }
     public int PartialMonthContribution { get; init; } = 1;
+    public int TaxMethod { get; init; } = 1;
+    [Range(0, 100000000)]
+    public decimal? ThirteenthMonthExemptCeiling { get; init; }
 }
 
 public sealed record RecurringItemDto(
@@ -123,4 +137,11 @@ public sealed class CreateRecurringItemDto
     public DateOnly? From { get; init; }
     public DateOnly? To { get; init; }
     public decimal? TotalOwed { get; init; }
+}
+
+public sealed class StartThirteenthDto
+{
+    [Range(2000, 2100)]
+    public int Year { get; init; }
+    public DateOnly? CutoffDate { get; init; }
 }

@@ -901,6 +901,65 @@ namespace Infrastructure.Migrations
                     b.ToTable("EmployeeEmergencyContacts");
                 });
 
+            modelBuilder.Entity("Core.Entities.EmployeeIdentifiers", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BankAccountName")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("BankAccountNumberProtected")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("BankName")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("PagIbigProtected")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("PhilHealthProtected")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("SssProtected")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TinProtected")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UpdatedByUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmployeeId")
+                        .IsUnique();
+
+                    b.HasIndex("TenantId");
+
+                    b.ToTable("EmployeeIdentifiers");
+                });
+
             modelBuilder.Entity("Core.Entities.EmployeeTimelineEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1020,6 +1079,42 @@ namespace Infrastructure.Migrations
                         .HasFilter("[IsDeleted] = 0");
 
                     b.ToTable("Holidays");
+                });
+
+            modelBuilder.Entity("Core.Entities.IdentifierAccessLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Action")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("EmployeeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Field")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("UpdatedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("EmployeeId", "CreatedAtUtc");
+
+                    b.ToTable("IdentifierAccessLogs");
                 });
 
             modelBuilder.Entity("Core.Entities.Interview", b =>
@@ -2004,10 +2099,13 @@ namespace Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("HolidayOvertimeMultiplier")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(5,3)");
 
                     b.Property<decimal>("HoursPerDay")
                         .HasColumnType("decimal(4,2)");
+
+                    b.Property<int>("Kind")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("LastActivityAtUtc")
                         .HasColumnType("datetime2");
@@ -2029,7 +2127,7 @@ namespace Infrastructure.Migrations
                         .HasColumnType("date");
 
                     b.Property<decimal?>("RestDayOvertimeMultiplier")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(5,3)");
 
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
@@ -2040,8 +2138,14 @@ namespace Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<int>("TaxMethod")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("ThirteenthMonthExemptCeiling")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime2");
@@ -2059,6 +2163,10 @@ namespace Infrastructure.Migrations
                     b.HasIndex("TenantId");
 
                     b.HasIndex("TenantId", "PeriodStart", "PeriodEnd")
+                        .IsUnique()
+                        .HasFilter("[Status] <> 4");
+
+                    b.HasIndex("TenantId", "Kind", "PeriodStart", "PeriodEnd")
                         .IsUnique()
                         .HasFilter("[Status] <> 4");
 
@@ -2087,22 +2195,28 @@ namespace Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.Property<decimal?>("HolidayOvertimeMultiplier")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(5,3)");
 
                     b.Property<decimal>("HoursPerDay")
                         .HasColumnType("decimal(4,2)");
 
                     b.Property<decimal>("OrdinaryOvertimeMultiplier")
-                        .HasColumnType("decimal(5,2)");
+                        .HasColumnType("decimal(5,3)");
 
                     b.Property<int>("PartialMonthContribution")
                         .HasColumnType("int");
 
                     b.Property<decimal?>("RestDayOvertimeMultiplier")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(5,3)");
+
+                    b.Property<int>("TaxMethod")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("TenantId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<decimal?>("ThirteenthMonthExemptCeiling")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime?>("UpdatedAtUtc")
                         .HasColumnType("datetime2");
@@ -3174,6 +3288,15 @@ namespace Infrastructure.Migrations
                     b.Navigation("Employee");
                 });
 
+            modelBuilder.Entity("Core.Entities.EmployeeIdentifiers", b =>
+                {
+                    b.HasOne("Core.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Core.Entities.EmployeeTimelineEvent", b =>
                 {
                     b.HasOne("Core.Entities.Employee", "Employee")
@@ -3196,6 +3319,15 @@ namespace Infrastructure.Migrations
                     b.HasOne("Core.Entities.WorkLocation", null)
                         .WithMany()
                         .HasForeignKey("WorkLocationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Core.Entities.IdentifierAccessLog", b =>
+                {
+                    b.HasOne("Core.Entities.Employee", null)
+                        .WithMany()
+                        .HasForeignKey("EmployeeId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });

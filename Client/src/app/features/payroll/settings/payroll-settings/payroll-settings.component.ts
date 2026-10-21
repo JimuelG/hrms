@@ -5,6 +5,7 @@ import { PayrollService } from '../../../../core/services/payroll.service';
 import { ContributionDeduction, FREQUENCY_LABELS, PARTIAL_LABELS, PartialMonthContribution, PayFrequency, PayrollSettings, POLICY_LABELS } from '../../../../shared/models/payroll';
 import { errorMessage } from '../../../../shared/utils/api-error.util';
 
+
 @Component({
   selector: 'app-payroll-settings',
   imports: [
@@ -63,4 +64,5 @@ export class PayrollSettingsComponent implements OnInit {
       }
     })
   }
+
 }

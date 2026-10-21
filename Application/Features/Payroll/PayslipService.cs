@@ -23,7 +23,7 @@ public sealed class PayslipService(
         return ServiceResult<PayslipDto>.Success(await ToDtoAsync(row, ct));
     }
 
-    public async Task<ServiceResult<PayslipDto>> GetMineAsynce(Guid userId, Guid runId, CancellationToken ct = default)
+    public async Task<ServiceResult<PayslipDto>> GetMineAsync(Guid userId, Guid runId, CancellationToken ct = default)
     {
         var me = await employees.GetEntityWithSpec(new EmployeeByUserIdSpecification(userId), ct);
         if (me is null) return ServiceResult<PayslipDto>.Fail(NotLinked, ServiceErrorType.NotFound);
@@ -42,28 +42,37 @@ public sealed class PayslipService(
 
         var rows = await results.ListAsync(new PayrollResultsByEmployeeSpecification(me.Id), ct);
         return ServiceResult<IReadOnlyList<PayslipSummaryDto>>.Success(rows
-            .Select(r => new PayslipSummaryDto(r.PayrollRunId, r.Run.PeriodStart, r.Run.PeriodEnd, r.Net, r.Run.FinalizedAtUtc))
+            .Select(r => new PayslipSummaryDto(r.PayrollRunId, r.Run.PeriodStart, r.Run.PeriodEnd, r.Net, r.Run.FinalizedAtUtc, (int)r.Run.Kind))
             .ToList());
     }
 
-    private async Task<PayslipDto> ToDtoAsync(PayrollResultRecord r, CancellationToken ct) => new(
-        r.PayrollRunId,
-        (int)r.Run.Status,
-        r.Run.PeriodStart,
-        r.Run.PeriodEnd,
-        r.Run.FinalizedAtUtc,
-        await tenantNames.GetCurrentNameAsync(ct),
-        r.EmployeeNumber,
-        r.EmployeeName,
-        r.PositionTitle,
-        r.DepartmentName,
-        r.MonthlyBasic,
-        r.Gross,
-        r.TaxableIncome,
-        r.TotalEarnings,
-        r.TotalDeductions,
-        r.Net,
-        ResultSnapshot.Read(r.LinesJson, new List<PayrollLine>())
-            .Select(l => new PayrollLineDto(l.Code, l.Label, l.Amount, (int)l.Kind)).ToList(),
-        ResultSnapshot.Read(r.NotesJson, new List<string>()));
+    private async Task<PayslipDto> ToDtoAsync(PayrollResultRecord r, CancellationToken ct)
+    {
+        var earlier = await results.ListAsync(new FinalizedResultsForEmployeeInYearSpecification(r.EmployeeId, r.Run.PeriodEnd.Year, r.Run.PeriodStart), ct);
+        var ytd = PayslipYtd.Compute(earlier, r);
+
+        return new PayslipDto(
+            r.PayrollRunId,
+            (int)r.Run.Status,
+            r.Run.PeriodStart,
+            r.Run.PeriodEnd,
+            r.Run.FinalizedAtUtc,
+            await tenantNames.GetCurrentNameAsync(ct),
+            r.EmployeeNumber,
+            r.EmployeeName,
+            r.PositionTitle,
+            r.DepartmentName,
+            r.MonthlyBasic,
+            r.Gross,
+            r.TaxableIncome,
+            r.TotalEarnings,
+            r.TotalDeductions,
+            r.Net,
+            ResultSnapshot.Read(r.LinesJson, new List<PayrollLine>())
+                .Select(l => new PayrollLineDto(l.Code, l.Label, l.Amount, (int)l.Kind)).ToList(),
+            ResultSnapshot.Read(r.NotesJson, new List<string>()),
+            new PayslipYtdDto(ytd.Gross, ytd.TaxableIncome, ytd.TaxWithheld, ytd.Net),
+            (int)r.Run.Kind
+        );
+    }
 }

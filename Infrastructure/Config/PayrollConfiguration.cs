@@ -12,8 +12,11 @@ public class PayrollSettingsConfiguration : IEntityTypeConfiguration<PayrollSett
         builder.Property(s => s.Frequency).HasConversion<int>();
         builder.Property(s => s.ContributionPolicy).HasConversion<int>();
         builder.Property(s => s.HoursPerDay).HasColumnType("decimal(4,2)");
-        builder.Property(s => s.OrdinaryOvertimeMultiplier).HasColumnType("decimal(5,2)");
+        builder.Property(s => s.OrdinaryOvertimeMultiplier).HasColumnType("decimal(5,3)");
+        builder.Property(s => s.RestDayOvertimeMultiplier).HasColumnType("decimal(5,3)");
+        builder.Property(s => s.HolidayOvertimeMultiplier).HasColumnType("decimal(5,3)");
         builder.Property(s => s.PartialMonthContribution).HasConversion<int>();
+        builder.Property(s => s.TaxMethod).HasConversion<int>();
 
         builder.HasIndex(s => s.TenantId).IsUnique();
     }
@@ -28,16 +31,22 @@ public class PayrollRunConfiguration : IEntityTypeConfiguration<PayrollRun>
         builder.Property(r => r.ContributionPolicy).HasConversion<int>();
         builder.Property(r => r.HoursPerDay).HasColumnType("decimal(4,2)");
         builder.Property(r => r.OrdinaryOvertimeMultiplier).HasColumnType("decimal(5,3)");
+        builder.Property(s => s.RestDayOvertimeMultiplier).HasColumnType("decimal(5,3)");
+        builder.Property(s => s.HolidayOvertimeMultiplier).HasColumnType("decimal(5,3)");
         builder.Property(r => r.Notes).HasMaxLength(1000);
         builder.Property(r => r.CancellationReason).HasMaxLength(500);
         builder.Property(r => r.RowVersion).IsRowVersion();
-        builder.Property(s => s.PartialMonthContribution).HasConversion<int>();
+        builder.Property(r => r.PartialMonthContribution).HasConversion<int>();
+        builder.Property(r => r.TaxMethod).HasConversion<int>();
+        builder.Property(r => r.Kind).HasConversion<int>();
+        builder.Property(r => r.ThirteenthMonthExemptCeiling).HasColumnType("decimal(18,2)");
 
         builder.HasMany(r => r.Results).WithOne(x => x.Run).HasForeignKey(x => x.PayrollRunId).OnDelete(DeleteBehavior.Cascade);
         builder.HasMany(r => r.Adjustments).WithOne(x => x.Run).HasForeignKey(x => x.PayrollRunId).OnDelete(DeleteBehavior.Cascade);
 
         builder.HasIndex(r => new { r.TenantId, r.PeriodStart, r.PeriodEnd}).IsUnique().HasFilter("[Status] <> 4");
         builder.HasIndex(r => r.Status);
+        builder.HasIndex(r => new { r.TenantId, r.Kind, r.PeriodStart, r.PeriodEnd }).IsUnique().HasFilter("[Status] <> 4");
     }
 }
 
@@ -72,6 +81,7 @@ public class PayrollAdjustmentRecordConfiguration : IEntityTypeConfiguration<Pay
     {
         builder.Property(a => a.Label).HasMaxLength(100).IsRequired();
         builder.Property(a => a.Amount).HasColumnType("decimal(18,2)");
+        builder.Property(a => a.Tax).HasConversion<int>();
 
         builder.HasOne<Employee>().WithMany().HasForeignKey(a => a.EmployeeId).OnDelete(DeleteBehavior.Restrict);
         builder.HasIndex(a => new { a.PayrollRunId, a.EmployeeId });

@@ -5,9 +5,12 @@
       <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">One run per pay period. Review, approve, then finalize.</p>
     </div>
     @if (permissions.can(P.payroll.run)) {
-      <button (click)="openStart()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3.5 py-2 rounded-md shrink-0">
-        <i class="fa-solid fa-plus text-xs"></i> Start a run
-      </button>
+      <div class="flex items-center gap-2 shrink-0">
+        <button (click)="openThirteenth()" class="px-3.5 py-2 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800">13th month pay</button>
+        <button (click)="openStart()" class="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 text-white text-sm font-medium px-3.5 py-2 rounded-md">
+          <i class="fa-solid fa-plus text-xs"></i> Start a run
+        </button>
+      </div>
     }
   </div>
 
@@ -29,7 +32,7 @@
       <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
         @for (r of runs(); track r.id) {
           <tr (click)="open(r)" class="hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer">
-            <td class="px-4 py-3 font-medium whitespace-nowrap">{{ dateLabel(r.periodStart) }} to {{ dateLabel(r.periodEnd) }}</td>
+            <td class="px-4 py-3 font-medium whitespace-nowrap">{{ r.kind === 2 ? '13th month pay, through ' + dateLabel(r.periodEnd) : dateLabel(r.periodStart) + ' to ' + dateLabel(r.periodEnd) }}</td>
             <td class="px-4 py-3"><span class="text-[11px] font-medium px-1.5 py-0.5 rounded" [class]="statusClass(r.status)">{{ statusLabel[r.status] }}</span></td>
             <td class="px-4 py-3 text-right tabular-nums">
               {{ r.employeeCount }}
@@ -65,6 +68,21 @@
     <div class="flex justify-end gap-2 mt-4">
       <button (click)="startOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
       <button (click)="submitStart()" [disabled]="starting()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">{{ starting() ? 'Computing…' : 'Start run' }}</button>
+    </div>
+  </div>
+}
+
+@if (thirteenthOpen()) {
+  <div class="fixed inset-0 bg-slate-900/40 z-40" (click)="thirteenthOpen.set(false)"></div>
+  <div class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg z-50 p-5">
+    <h2 class="font-semibold text-sm mb-1">Start a 13th month pay run</h2>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Pays one twelfth of basic salary earned from January 1 to the cutoff, minus 13th month pay already paid this year. Use June 30 for a mid-year advance and December 31 for the balance. It is calculated from finalized payroll runs only.</p>
+    @if (thirteenthError()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ thirteenthError() }}</div> }
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1.5">Cutoff (last day of a month)</span>
+      <input type="date" [(ngModel)]="cutoff" name="cutoff" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-indigo-500/40" /></label>
+    <div class="flex justify-end gap-2 mt-4">
+      <button (click)="thirteenthOpen.set(false)" class="px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700">Cancel</button>
+      <button (click)="submitThirteenth()" [disabled]="thirteenthBusy()" class="px-3 py-1.5 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">{{ thirteenthBusy() ? 'Computing…' : 'Start run' }}</button>
     </div>
   </div>
 }

@@ -24,7 +24,7 @@ public class PayslipsController(IPayslipService service) : BaseApiController
     {
         if (!TryGetUserId(out var userId)) return Unauthorized();
         Response.Headers.CacheControl = "private, no-store";
-        return (await service.GetMineAsynce(userId, runId, ct)).ToActionResult(this);
+        return (await service.GetMineAsync(userId, runId, ct)).ToActionResult(this);
     }
 
     [HasPermission(Permissions.Payroll.Read)]
