@@ -1,0 +1,92 @@
+<div class="max-w-5xl">
+  <div class="mb-6">
+    <h1 class="text-xl font-semibold tracking-tight">Leave report</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">How much leave is used and who is away.</p>
+  </div>
+
+  <div class="flex gap-1 border-b border-slate-200 dark:border-slate-800 mb-4">
+    @for (t of [{ key: 'usage', label: 'Usage by type' }, { key: 'calendar', label: 'Who is away' }]; track t.key) {
+      <button (click)="setTab($any(t.key))" class="px-3.5 py-2.5 text-sm font-medium border-b-2 -mb-px"
+        [class.border-indigo-600]="tab() === t.key" [class.text-indigo-600]="tab() === t.key" [class.dark:text-indigo-400]="tab() === t.key"
+        [class.border-transparent]="tab() !== t.key" [class.text-slate-500]="tab() !== t.key">{{ t.label }}</button>
+    }
+  </div>
+
+  <div class="flex flex-wrap items-end gap-3 mb-4">
+    @if (tab() === 'usage') {
+      <div class="flex items-center gap-2">
+        <button (click)="changeYear(-1)" class="p-1.5 rounded border border-slate-200 dark:border-slate-700"><i class="fa-solid fa-chevron-left text-xs"></i></button>
+        <span class="text-sm font-medium w-14 text-center">{{ year() }}</span>
+        <button (click)="changeYear(1)" class="p-1.5 rounded border border-slate-200 dark:border-slate-700"><i class="fa-solid fa-chevron-right text-xs"></i></button>
+      </div>
+    } @else {
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">From</span>
+        <input type="date" [(ngModel)]="from" name="from" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+      <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">To</span>
+        <input type="date" [(ngModel)]="to" name="to" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+    }
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Department</span>
+      <select [(ngModel)]="departmentId" name="dept" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none min-w-[160px]">
+        <option value="">All</option>@for (d of departments(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+      </select></label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Branch</span>
+      <select [(ngModel)]="branchId" name="branch" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none min-w-[160px]">
+        <option value="">All</option>@for (b of branches(); track b.id) { <option [value]="b.id">{{ b.name }}</option> }
+      </select></label>
+    <button (click)="run()" class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white">Run report</button>
+    <button (click)="download()" class="px-3.5 py-2 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"><i class="fa-solid fa-download text-xs"></i> CSV</button>
+  </div>
+
+  @if (error()) { <div class="text-red-600 dark:text-red-400 text-sm mb-4">{{ error() }}</div> }
+
+  @if (tab() === 'usage' && usage(); as u) {
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+      @for (t of u.totals; track t.code) {
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-3">
+          <div class="text-xs text-slate-500 dark:text-slate-400">{{ t.name }} <span class="font-mono">{{ t.code }}</span></div>
+          <div class="text-xl font-semibold tabular-nums mt-1">{{ t.approved }} <span class="text-xs font-normal text-slate-400">days approved</span></div>
+          @if (t.pending > 0) { <div class="text-xs text-amber-700 dark:text-amber-400">{{ t.pending }} pending</div> }
+        </div>
+      } @empty { <p class="text-sm text-slate-400 sm:col-span-3">No leave filed in {{ u.year }}.</p> }
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto">
+      <table class="w-full text-sm min-w-[640px]">
+        <thead>
+          <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+            <th class="text-left font-medium px-4 py-2.5">Employee</th>
+            <th class="text-left font-medium px-3 py-2.5">Leave type</th>
+            <th class="text-right font-medium px-3 py-2.5">Approved</th>
+            <th class="text-right font-medium px-3 py-2.5">Pending</th>
+            <th class="text-right font-medium px-4 py-2.5">Balance</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 tabular-nums">
+          @for (r of u.rows; track $index) {
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+              <td class="px-4 py-2.5 font-sans"><div class="font-medium">{{ r.name }}</div><div class="text-xs text-slate-500 dark:text-slate-400">{{ r.department || 'Unassigned' }}</div></td>
+              <td class="px-3 py-2.5 font-sans">{{ r.leaveTypeName }}</td>
+              <td class="px-3 py-2.5 text-right">{{ r.approved }}</td>
+              <td class="px-3 py-2.5 text-right">{{ r.pending }}</td>
+              <td class="px-4 py-2.5 text-right">{{ r.balance === null ? 'No limit' : r.balance }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="5" class="px-4 py-10 text-center text-slate-400 text-sm font-sans">Nothing to show for {{ u.year }}.</td></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  @if (tab() === 'calendar' && calendar(); as c) {
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg divide-y divide-slate-100 dark:divide-slate-800">
+      @for (d of c.days; track d.date) {
+        <div class="px-4 py-3 flex gap-4 text-sm">
+          <div class="w-24 shrink-0 font-medium">{{ shortDate(d.date) }}</div>
+          <div class="text-slate-600 dark:text-slate-300">{{ d.names.join(', ') }}</div>
+        </div>
+      } @empty { <p class="px-4 py-10 text-center text-sm text-slate-400">Nobody is away in this period.</p> }
+    </div>
+    <p class="text-xs text-slate-400 mt-3">Approved leave only, by calendar day. Weekends and holidays aren't removed. The type of leave is never shown.</p>
+  }
+</div>

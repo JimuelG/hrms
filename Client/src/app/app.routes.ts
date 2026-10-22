@@ -36,6 +36,9 @@ import { PayrollSettingsComponent } from './features/payroll/settings/payroll-se
 import { StatutoryRulesComponent } from './features/payroll/rules/statutory-rules/statutory-rules.component';
 import { MyPayslipsComponent } from './features/payroll/my-payslips/my-payslips/my-payslips.component';
 import { RunPayslipComponent } from './features/payroll/run-payslip/run-payslip/run-payslip.component';
+import { WorkforceReportComponent } from './features/reports/workforce/workforce-report/workforce-report.component';
+import { AttendanceReportComponent } from './features/reports/attendance/attendance-report/attendance-report.component';
+import { LeaveReportComponent } from './features/reports/leave/leave-report/leave-report.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent},
@@ -44,6 +47,7 @@ export const routes: Routes = [
         canActivate: [authGuard],
         component: ShellComponent,
         children: [
+            { path: '', component: DashboardComponent },
             { path: 'dashboard', component: DashboardComponent },
             { path: 'organization/branches', component: BranchesComponent},
             { path: 'organization/departments', component: DepartmentsComponent},
@@ -73,6 +77,9 @@ export const routes: Routes = [
             { path: 'payroll/settings', component: PayrollSettingsComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.manageSettings)]},
             { path: 'payslips', component: MyPayslipsComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.viewOwn)]},
             { path: 'payslips/runs/:runId/payslip/:employeeId', component: RunPayslipComponent, canActivate: [permissionGuard(PERMISSIONS.payroll.read)]},
+            { path: 'reports/workforce', component: WorkforceReportComponent, canActivate: [permissionGuard(PERMISSIONS.reports.view)]},
+            { path: 'reports/attendance', component: AttendanceReportComponent, canActivate: [permissionGuard(PERMISSIONS.reports.view)]},
+            { path: 'reports/leave', component: LeaveReportComponent, canActivate: [permissionGuard(PERMISSIONS.reports.view)]},
         ]
     },
     {

@@ -21,7 +21,7 @@ namespace Infrastructure.Migrations
                 table: "PayrollRuns",
                 type: "int",
                 nullable: false,
-                defaultValue: 0);
+                defaultValue: 1);
 
             migrationBuilder.AddColumn<decimal>(
                 name: "ThirteenthMonthExemptCeiling",

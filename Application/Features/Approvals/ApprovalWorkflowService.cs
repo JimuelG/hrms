@@ -17,7 +17,7 @@ public class ApprovalWorkflowService(
     IApprovalQueryService query,
     IEnumerable<IApprovalSubjectHandler> handlers,
     ITenantContext tenant,
-    TimeProvider clock) : IApprovalWorkFlowService
+    TimeProvider clock) : IApprovalWorkflowService
 {
     private const string NotFoundMessage = "Approval request not found.";
 

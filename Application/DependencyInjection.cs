@@ -1,6 +1,7 @@
 using Application.Features.Approvals;
 using Application.Features.Attendance;
 using Application.Features.Branches;
+using Application.Features.Dashboard;
 using Application.Features.Departments;
 using Application.Features.Employees;
 using Application.Features.Leave;
@@ -8,6 +9,7 @@ using Application.Features.Onboarding;
 using Application.Features.Payroll;
 using Application.Features.Positions;
 using Application.Features.Recruitment;
+using Application.Features.Reports;
 using Core.DTOs.Attendance;
 using Core.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,7 +46,7 @@ public static class DependencyInjection
         services.AddScoped<ILeaveCalculationService, LeaveCalculationService>();
         services.AddScoped<ILeaveBalanceService, LeaveBalanceService>();
         services.AddScoped<IApprovalQueryService, ApprovalQueryService>();
-        services.AddScoped<IApprovalWorkFlowService, ApprovalWorkflowService>();
+        services.AddScoped<IApprovalWorkflowService, ApprovalWorkflowService>();
         services.AddScoped<IApprovalSubjectHandler, LeaveApprovalHandler>();
         services.AddScoped<ILeaveRequestService, LeaveRequestService>();
         services.AddScoped<ILeaveAttachmentService, LeaveAttachmentService>();
@@ -54,6 +56,10 @@ public static class DependencyInjection
         services.AddScoped<IPayslipService, PayslipService>();
         services.AddScoped<IRecurringPayrollService, RecurringPayrollService>();
         services.AddScoped<IIdentifierService, IdentifierService>();
+        services.AddScoped<IDashboardService, DashboardService>();
+        services.AddScoped<IWorkforceReportService, WorkforceReportService>();
+        services.AddScoped<IAttendanceReportService, AttendanceReportService>();
+        services.AddScoped<ILeaveReportService, LeaveReportService>();
 
         return services;
     }

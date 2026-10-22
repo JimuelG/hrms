@@ -267,6 +267,7 @@ public static class DevDataSeeder
            Permissions.Identifiers.Read,
            Permissions.Identifiers.Write,
            Permissions.Identifiers.Reveal,
+           Permissions.Reports.View
            
         ], assignTo:acmeAdmin);
 

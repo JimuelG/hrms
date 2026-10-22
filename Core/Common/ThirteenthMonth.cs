@@ -106,8 +106,8 @@ public static class ThirteenthMonthComposer
         {
             if (method != TaxMethod.Cumulative)
             {
-                warnings.Add("The taxable part was recorded but no tax was withheld, becuase tax is set to per-period. " +
-                                "use cumulative tax, or add a deduction by hand.");
+                warnings.Add("The taxable part was recorded but no tax was withheld, because tax is set to per-period. " +
+                                "Use cumulative tax, or add a deduction by hand.");
             }
             else if (taxRule is null)
             {

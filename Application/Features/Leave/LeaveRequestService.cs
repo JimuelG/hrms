@@ -20,7 +20,7 @@ public class LeaveRequestService(
     IGenericRepository<ApprovalEvent> approvalEvents,
     ILeaveCalculationService calculation,
     ILeaveBalanceService balances,
-    IApprovalWorkFlowService workflow,
+    IApprovalWorkflowService workflow,
     IPermissionService permissions,
     ITenantContext tenant,
     ITimeZoneResolver zones,
@@ -137,7 +137,7 @@ public class LeaveRequestService(
         {
             var codes = await permissions.GetPermissionsAsync(userId, tenant.RequiredTenantId, ct);
             var isHr = codes.Contains(Permissions.Leave.Manage);
-            if (!isHr && !await IsApproverAsync(userId, employee?.Id, codes, request, ct));
+            if (!isHr && !await IsApproverAsync(userId, employee?.Id, codes, request, ct))
                 return ServiceResult<LeaveRequestDto>.Fail(NotFound, ServiceErrorType.NotFound);
         }
 

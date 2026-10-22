@@ -13,6 +13,11 @@
       </div>
     }
   </div>
+   <div class="bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-xs rounded-md px-3 py-2.5 mb-5">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      Payroll figures depend on the rates, tables and policies your company loads. They have not been verified by this system.
+      Have a qualified accountant review them before paying real wages.
+  </div>
 
   @if (loadError()) {
     <div class="flex items-center gap-2 bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm font-medium rounded-md px-3 py-2.5 mb-4"><i class="fa-solid fa-circle-exclamation text-xs"></i> {{ loadError() }}</div>

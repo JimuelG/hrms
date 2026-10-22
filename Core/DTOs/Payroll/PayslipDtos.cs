@@ -30,7 +30,7 @@ public sealed record PayslipDto(
     int Kind);
 
 public sealed record PayslipYtdDto(
-    decimal Gros,
+    decimal Gross,
     decimal TaxableIncome,
     decimal TaxWithheld,
     decimal Net);

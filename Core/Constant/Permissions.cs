@@ -129,6 +129,11 @@ public static class Permissions
         public const string Reveal = "identifiers.reveal";
     }
 
+    public static class Reports
+    {
+        public const string View = "reports.view";
+    }
+
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
         (Employees.Read, "Employees", "View employee records"),
@@ -185,6 +190,7 @@ public static class Permissions
         (Identifiers.Read, "Employees", "View masked government IDs and bank details"),
         (Identifiers.Write, "Employees", "Set government IDs and bank details"),
         (Identifiers.Reveal, "Employees", "Reveal full government IDs and bank details"),
+        (Reports.View, "Reports", "View workforce, attendance and leave reports"),
 
     ];
 }

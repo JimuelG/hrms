@@ -1,0 +1,89 @@
+<div class="max-w-6xl">
+  <div class="mb-6">
+    <h1 class="text-xl font-semibold tracking-tight">Attendance report</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Days present, absent and late, per employee. Up to 93 days at a time.</p>
+  </div>
+
+  <div class="flex flex-wrap items-end gap-3 mb-4">
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">From</span>
+      <input type="date" [(ngModel)]="q.from" name="from" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">To</span>
+      <input type="date" [(ngModel)]="q.to" name="to" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Grace (minutes)</span>
+      <input type="number" min="0" max="120" [(ngModel)]="q.graceMinutes" name="grace" class="w-24 border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Department</span>
+      <select [(ngModel)]="q.departmentId" name="dept" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none min-w-[160px]">
+        <option value="">All</option>@for (d of departments(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+      </select></label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Branch</span>
+      <select [(ngModel)]="q.branchId" name="branch" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none min-w-[160px]">
+        <option value="">All</option>@for (b of branches(); track b.id) { <option [value]="b.id">{{ b.name }}</option> }
+      </select></label>
+    <button (click)="run()" [disabled]="loading()" class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">{{ loading() ? 'Loading…' : 'Run report' }}</button>
+    <button (click)="download()" class="px-3.5 py-2 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"><i class="fa-solid fa-download text-xs"></i> CSV</button>
+  </div>
+
+  @if (error()) { <div class="text-red-600 dark:text-red-400 text-sm mb-4">{{ error() }}</div> }
+
+  @if (report(); as r) {
+    @if (r.noScheduleCount > 0) {
+      <div class="bg-amber-50 dark:bg-amber-950 text-amber-800 dark:text-amber-300 text-xs rounded-md px-3 py-2.5 mb-4">
+        <i class="fa-solid fa-triangle-exclamation"></i> {{ r.noScheduleCount }} employee(s) have no work schedule. Their lateness and undertime can't be judged, and their absences use the company working days.
+      </div>
+    }
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg overflow-x-auto">
+      <table class="w-full text-sm min-w-[900px]">
+        <thead>
+          <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+            <th class="text-left font-medium px-4 py-2.5">Employee</th>
+            <th class="text-right font-medium px-3 py-2.5">Scheduled</th>
+            <th class="text-right font-medium px-3 py-2.5">Present</th>
+            <th class="text-right font-medium px-3 py-2.5">Absent</th>
+            <th class="text-right font-medium px-3 py-2.5">Late</th>
+            <th class="text-right font-medium px-3 py-2.5">Undertime</th>
+            <th class="text-right font-medium px-3 py-2.5">Overtime</th>
+            <th class="text-right font-medium px-4 py-2.5">Open</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 tabular-nums">
+          @for (row of r.rows; track row.employeeId) {
+            <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/40">
+              <td class="px-4 py-2.5 font-sans">
+                <div class="font-medium">{{ row.name }} <span class="font-mono text-xs text-slate-400">{{ row.employeeNumber }}</span></div>
+                <div class="text-xs text-slate-500 dark:text-slate-400">{{ row.department || 'Unassigned' }}@if (row.noSchedule) { · <span class="text-amber-700 dark:text-amber-400">no schedule</span> }</div>
+              </td>
+              <td class="px-3 py-2.5 text-right">{{ row.scheduledDays }}</td>
+              <td class="px-3 py-2.5 text-right">{{ row.presentDays }}</td>
+              <td class="px-3 py-2.5 text-right" [class.text-red-600]="row.absentDays > 0" [class.dark:text-red-400]="row.absentDays > 0">{{ row.absentDays }}</td>
+              <td class="px-3 py-2.5 text-right">{{ row.lateCount }} <span class="text-xs text-slate-400">({{ formatMinutes(row.lateMinutes) }})</span></td>
+              <td class="px-3 py-2.5 text-right">{{ formatMinutes(row.undertimeMinutes) }}</td>
+              <td class="px-3 py-2.5 text-right">{{ formatMinutes(row.overtimeMinutes) }}</td>
+              <td class="px-4 py-2.5 text-right" [class.text-amber-600]="row.openRecords > 0" [class.dark:text-amber-400]="row.openRecords > 0">{{ row.openRecords }}</td>
+            </tr>
+          } @empty {
+            <tr><td colspan="8" class="px-4 py-10 text-center text-slate-400 text-sm">Nobody was employed in this period.</td></tr>
+          }
+        </tbody>
+        @if (r.rows.length > 0) {
+          <tfoot>
+            <tr class="border-t border-slate-200 dark:border-slate-700 font-medium tabular-nums bg-slate-50 dark:bg-slate-800/50">
+              <td class="px-4 py-2.5 font-sans">Total</td>
+              <td class="px-3 py-2.5 text-right">{{ r.totals.scheduledDays }}</td>
+              <td class="px-3 py-2.5 text-right">{{ r.totals.presentDays }}</td>
+              <td class="px-3 py-2.5 text-right">{{ r.totals.absentDays }}</td>
+              <td class="px-3 py-2.5 text-right">{{ r.totals.lateCount }} <span class="text-xs text-slate-400">({{ formatMinutes(r.totals.lateMinutes) }})</span></td>
+              <td class="px-3 py-2.5 text-right">{{ formatMinutes(r.totals.undertimeMinutes) }}</td>
+              <td class="px-3 py-2.5 text-right">{{ formatMinutes(r.totals.overtimeMinutes) }}</td>
+              <td class="px-4 py-2.5 text-right">{{ r.totals.openRecords }}</td>
+            </tr>
+          </tfoot>
+        }
+      </table>
+    </div>
+    <p class="text-xs text-slate-400 mt-3">
+      Absent means a scheduled working day with no attendance, no approved leave and no holiday. Open means a past day with no clock-out.
+      Late and undertime beyond {{ r.graceMinutes }} minute(s) of grace. Overtime is what was approved, not measured from clock times.
+    </p>
+  }
+</div>

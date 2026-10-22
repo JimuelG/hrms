@@ -32,7 +32,7 @@ public interface IApprovalQueryService
     Task<ApprovalRequestDetailDto> DescribeAsync(ApprovalRequest request, Guid viewerUserId, CancellationToken ct = default);
 }
 
-public interface IApprovalWorkFlowService
+public interface IApprovalWorkflowService
 {
     Task<ServiceResult<SubmissionResult>> StageSubmissionAsync(ApprovalSubmission submission, CancellationToken ct = default);
 

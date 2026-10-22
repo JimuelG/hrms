@@ -1,17 +1,88 @@
 <div class="max-w-5xl">
-      <h1 class="text-xl font-semibold tracking-tight">Dashboard</h1>
-      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5 mb-6">Overview of your workspace.</p>
+  @if (error()) {
+    <div class="text-red-600 dark:text-red-400 text-sm mb-4">{{ error() }}</div>
+  }
 
-      @if (me(); as m) {
-        <div class="grid sm:grid-cols-2 gap-4">
-          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5">
-            <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Signed in as</div>
-            <div class="text-sm font-medium break-all">{{ m.userId }}</div>
-          </div>
-          <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-5">
-            <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Tenant</div>
-            <div class="text-sm font-mono break-all">{{ m.tenantId }}</div>
-          </div>
+  @if (data(); as d) {
+    <div class="mb-6">
+      <h1 class="text-xl font-semibold tracking-tight">{{ scopeLabel(d) }}</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{{ d.date }} · refreshes every minute</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
+      @if (d.headcount; as h) {
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+          <div class="text-xs text-slate-500 dark:text-slate-400">{{ d.scope === 'Team' ? 'Team members' : 'Headcount' }}</div>
+          <div class="text-3xl font-semibold tabular-nums mt-1">{{ h.active }}</div>
+          @if (h.hiredThisMonth !== null) {
+            <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">{{ h.hiredThisMonth }} hired · {{ h.leftThisMonth }} left this month</div>
+          }
         </div>
       }
+
+      <a routerLink="/leave/approvals" class="block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 hover:border-indigo-300 dark:hover:border-indigo-700">
+        <div class="text-xs text-slate-500 dark:text-slate-400">Waiting for your decision</div>
+        <div class="text-3xl font-semibold tabular-nums mt-1">{{ d.pendingApprovals }}</div>
+        <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">Open approvals</div>
+      </a>
+
+      @if (d.openJobPostings !== null) {
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+          <div class="text-xs text-slate-500 dark:text-slate-400">Open job postings</div>
+          <div class="text-3xl font-semibold tabular-nums mt-1">{{ d.openJobPostings }}</div>
+        </div>
+      }
+
+      @if (d.me; as m) {
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+          <div class="text-xs text-slate-500 dark:text-slate-400">You today</div>
+          <div class="text-lg font-semibold mt-1">{{ presence[m.status] }}</div>
+          <a routerLink="/leave" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline mt-2 inline-block">
+            {{ m.pendingLeaveRequests }} leave request(s) pending
+          </a>
+        </div>
+      }
+    </div>
+
+    @if (d.attendance; as a) {
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 mb-5">
+        <h2 class="text-sm font-semibold mb-3">Today's attendance</h2>
+        <div class="grid grid-cols-3 sm:grid-cols-6 gap-3 text-center">
+          <div><div class="text-xl font-semibold tabular-nums">{{ a.present + a.late }}<span class="text-sm font-normal text-slate-400"> / {{ a.expected }}</span></div><div class="text-xs text-slate-500 dark:text-slate-400">In</div></div>
+          <div><div class="text-xl font-semibold tabular-nums text-amber-600 dark:text-amber-400">{{ a.late }}</div><div class="text-xs text-slate-500 dark:text-slate-400">Late</div></div>
+          <div><div class="text-xl font-semibold tabular-nums">{{ a.notYetIn }}</div><div class="text-xs text-slate-500 dark:text-slate-400">Not in yet</div></div>
+          <div><div class="text-xl font-semibold tabular-nums text-red-600 dark:text-red-400">{{ a.notIn }}</div><div class="text-xs text-slate-500 dark:text-slate-400">Not clocked in</div></div>
+          <div><div class="text-xl font-semibold tabular-nums">{{ a.onLeave }}</div><div class="text-xs text-slate-500 dark:text-slate-400">On leave</div></div>
+          <div><div class="text-xl font-semibold tabular-nums text-slate-400">{{ a.noSchedule }}</div><div class="text-xs text-slate-500 dark:text-slate-400">No schedule</div></div>
+        </div>
+        @if (a.latePeople.length || a.notInPeople.length) {
+          <div class="grid sm:grid-cols-2 gap-4 mt-4 text-xs">
+            @if (a.latePeople.length) { <div><div class="font-medium text-slate-500 dark:text-slate-400 mb-1">Late</div>@for (n of a.latePeople; track $index) { <div>{{ n }}</div> }</div> }
+            @if (a.notInPeople.length) { <div><div class="font-medium text-slate-500 dark:text-slate-400 mb-1">Not clocked in</div>@for (n of a.notInPeople; track $index) { <div>{{ n }}</div> }</div> }
+          </div>
+        }
+        @if (a.noSchedule > 0) {
+          <p class="text-xs text-slate-400 mt-3">{{ a.noSchedule }} employee(s) have no work schedule, so their lateness can't be judged. Assign one on their profile.</p>
+        }
+      </section>
+    }
+
+    <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+      <h2 class="text-sm font-semibold mb-3">Away</h2>
+      <div class="grid sm:grid-cols-2 gap-4 text-sm">
+        <div>
+          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Today</div>
+          @for (a of d.leave.today; track $index) { <div class="flex justify-between py-0.5"><span>{{ a.name }}</span><span class="text-xs text-slate-400">until {{ shortDate(a.to) }}</span></div> }
+          @empty { <p class="text-slate-400">Nobody.</p> }
+        </div>
+        <div>
+          <div class="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1.5">Next 7 days</div>
+          @for (a of d.leave.upcoming; track $index) { <div class="flex justify-between py-0.5"><span>{{ a.name }}</span><span class="text-xs text-slate-400">{{ range(a) }}</span></div> }
+          @empty { <p class="text-slate-400">Nobody.</p> }
+        </div>
+      </div>
+    </section>
+  } @else if (!error()) {
+    <p class="text-sm text-slate-400">Loading…</p>
+  }
 </div>

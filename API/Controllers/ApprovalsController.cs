@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc.ModelBinding;
 namespace API.Controllers;
 
 [Authorize]
-public class ApprovalsController(IApprovalQueryService query, IApprovalWorkFlowService workflow) : BaseApiController
+public class ApprovalsController(IApprovalQueryService query, IApprovalWorkflowService workflow) : BaseApiController
 {
     private bool TryGetUserId(out Guid userId) => Guid.TryParse(User.FindFirst("sub")?.Value, out userId);
 
