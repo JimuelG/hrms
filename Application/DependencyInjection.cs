@@ -1,3 +1,4 @@
+using Application.Features.Alerts;
 using Application.Features.Approvals;
 using Application.Features.Attendance;
 using Application.Features.Branches;
@@ -60,6 +61,9 @@ public static class DependencyInjection
         services.AddScoped<IWorkforceReportService, WorkforceReportService>();
         services.AddScoped<IAttendanceReportService, AttendanceReportService>();
         services.AddScoped<ILeaveReportService, LeaveReportService>();
+        services.AddScoped<IRecruitmentReportService, RecruitmentReportService>();
+        services.AddScoped<IAlertService, AlertService>();
+        services.AddScoped<ILeaveGrantSweep, LeaveGrantSweep>();
 
         return services;
     }

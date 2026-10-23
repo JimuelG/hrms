@@ -3,7 +3,7 @@ using Core.Entities;
 using Core.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.IdentityModel.Tokens;
+using Core.Common;
 
 namespace Infrastructure.Persistence;
 public sealed class AuditSaveChangesInterceptor(
@@ -53,13 +53,13 @@ public sealed class AuditSaveChangesInterceptor(
                 case EntityState.Added:
                     log.Action = "Created";
                     log.NewValues = Serialize(entry.CurrentValues.Properties
-                        .ToDictionary(p => p.Name, p => entry.CurrentValues[p]));
+                        .ToDictionary(p => p.Name, p => AuditRules.Redact(p.Name, entry.CurrentValues[p])));
                     break;
                 
                 case EntityState.Deleted:
                     log.Action = "Deleted";
                     log.OldValues = Serialize(entry.OriginalValues.Properties
-                        .ToDictionary(p => p.Name, p => entry.OriginalValues[p]));
+                        .ToDictionary(p => p.Name, p => AuditRules.Redact(p.Name, entry.OriginalValues[p])));
                     break;
 
                 case EntityState.Modified:
@@ -71,8 +71,8 @@ public sealed class AuditSaveChangesInterceptor(
 
                     log.Action = isSoftDelete ? "Deleted" : "Updated";
                     log.ChangedColumns = string.Join(",", changed.Select(p => p.Metadata.Name));
-                    log.OldValues = Serialize(changed.ToDictionary(p => p.Metadata.Name, p => p.OriginalValue));
-                    log.NewValues = Serialize(changed.ToDictionary(p => p.Metadata.Name, p => p.CurrentValue));
+                    log.OldValues = Serialize(changed.ToDictionary(p => p.Metadata.Name, p => AuditRules.Redact(p.Metadata.Name, p.OriginalValue)));
+                    log.NewValues = Serialize(changed.ToDictionary(p => p.Metadata.Name, p => AuditRules.Redact(p.Metadata.Name, p.CurrentValue)));
                     break;
             }
 

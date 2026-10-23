@@ -41,6 +41,7 @@ export interface Dashboard {
     leave: LeaveCard;
     openJobPostings: number | null;
     me: MeCard | null;
+    openAlerts: number | null;
 }
 
 export const PRESENCE_LABELS: Record<number, string> = {

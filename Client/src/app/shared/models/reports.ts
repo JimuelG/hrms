@@ -96,3 +96,54 @@ export interface AttendanceQuery {
     departmentId: string;
     branchId: string;
 }
+
+export interface StageCount {
+    stage: string;
+    count: number;
+}
+
+export interface StageReach {
+    stage: string;
+    reached: number;
+    percentOfApplied: number;
+    percentOfPrevious: number | null;
+    smallSample: boolean;
+}
+
+export interface DurationStats {
+    count: number;
+    averageDays: number | null;
+    medianDays: number | null;
+}
+
+export interface AcceptanceRate {
+    accepted: number;
+    declined: number;
+    percent: number | null;
+    smallSample: boolean;
+}
+
+export interface CountByLabel {
+    label: string;
+    count: string;
+}
+
+export interface RecruitmentReport {
+    from: string;
+    to: string;
+    totalApplications: number;
+    pipeline: StageCount[];
+    conversion: StageReach[];
+    timeToHire: DurationStats;
+    offers: CountByLabel[];
+    offerAcceptance: AcceptanceRate;
+    interviews: CountByLabel[];
+    postings: CountByLabel[];
+}
+
+export interface RecruitmentQuery {
+    from: string;
+    to: string;
+    jobPostingId: string;
+    departmentId: string;
+}

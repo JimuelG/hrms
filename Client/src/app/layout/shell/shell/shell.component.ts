@@ -69,6 +69,13 @@ export class ShellComponent implements OnInit{
       { label: 'Workforce', path: '/reports/workforce', icon: 'fa-chart-pie', permission: P.reports.view },
       { label: 'Attendance', path: '/reports/attendance', icon: 'fa-user-clock', permission: P.reports.view },
       { label: 'Leave', path: '/reports/leave', icon: 'fa-umbrella-beach', permission: P.reports.view },
+      { label: 'Recruitment', path: '/reports/recruitment', icon: 'fa-user-plus', permission: P.reports.view },
+    ]},
+    { title: 'Alerts', items: [
+      { label: 'Alerts', path: '/alerts', icon: 'fa-bell', permission: P.alerts.view }
+    ]},
+    { title: 'Audit', items: [
+      { label: 'Audit trail', path: '/audit', icon: 'fa-clock-rotate-left', permission: P.audit.view }
     ]},
     { items: [{ label: 'Settings', path: '/settings', icon: 'fa-gear', permission: P.tenant.manageSettings }] }
   ]

@@ -15,6 +15,7 @@ public sealed class DashboardService(
     IGenericRepository<WorkSchedule> schedules,
     IGenericRepository<TenantSettings> tenantSettings,
     IGenericRepository<JobPosting> postings,
+    IGenericRepository<Alert> alertRepo,
     IApprovalQueryService approvals,
     IPermissionService permissions,
     ITenantContext tenant,
@@ -116,8 +117,11 @@ public sealed class DashboardService(
 
         int? openPostings = scope == DashboardScopeKind.Company
             ? await postings.CountAsync(new OpenJobPostingsSpecification(), ct) : null;
+        
+        int? openAlerts = codes.Contains(Permissions.Alerts.View)
+            ? await alertRepo.CountAsync(new OpenAlertsSpecification(null), ct) : null;
 
-        return ServiceResult<DashboardDto>.Success(new DashboardDto(scope.ToString(), today, headcount, pending, attendanceCard, leaveCard, openPostings, meCard));
+        return ServiceResult<DashboardDto>.Success(new DashboardDto(scope.ToString(), today, headcount, pending, attendanceCard, leaveCard, openPostings, meCard, openAlerts));
     }
 
     private static TimeZoneInfo ResolveZone(string? id)

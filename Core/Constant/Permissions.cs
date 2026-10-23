@@ -134,6 +134,17 @@ public static class Permissions
         public const string View = "reports.view";
     }
 
+    public static class Alerts
+    {
+        public const string View = "alerts.view";
+        public const string Manage = "alerts.manage";
+    }
+
+    public static class Audit
+    {
+        public const string View = "audit.view";
+    }
+
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
         (Employees.Read, "Employees", "View employee records"),
@@ -191,6 +202,9 @@ public static class Permissions
         (Identifiers.Write, "Employees", "Set government IDs and bank details"),
         (Identifiers.Reveal, "Employees", "Reveal full government IDs and bank details"),
         (Reports.View, "Reports", "View workforce, attendance and leave reports"),
+        (Alerts.View, "Alerts", "View system alerts such as expiring documents"),
+        (Alerts.Manage, "Alerts", "Run an alert scan on demand"),
+        (Audit.View, "Admin", "View the audit trail of changes (contains personal data)"),
 
     ];
 }

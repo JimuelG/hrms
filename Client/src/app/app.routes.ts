@@ -39,6 +39,9 @@ import { RunPayslipComponent } from './features/payroll/run-payslip/run-payslip/
 import { WorkforceReportComponent } from './features/reports/workforce/workforce-report/workforce-report.component';
 import { AttendanceReportComponent } from './features/reports/attendance/attendance-report/attendance-report.component';
 import { LeaveReportComponent } from './features/reports/leave/leave-report/leave-report.component';
+import { RecruitmentReportComponent } from './features/reports/recruitment/recruitment-report/recruitment-report.component';
+import { AlertsComponent } from './features/alerts/alerts/alerts.component';
+import { AuditLogComponent } from './features/audit/audit-log/audit-log.component';
 
 export const routes: Routes = [
     { path: 'login', component: LoginComponent},
@@ -80,6 +83,9 @@ export const routes: Routes = [
             { path: 'reports/workforce', component: WorkforceReportComponent, canActivate: [permissionGuard(PERMISSIONS.reports.view)]},
             { path: 'reports/attendance', component: AttendanceReportComponent, canActivate: [permissionGuard(PERMISSIONS.reports.view)]},
             { path: 'reports/leave', component: LeaveReportComponent, canActivate: [permissionGuard(PERMISSIONS.reports.view)]},
+            { path: 'reports/recruitment', component: RecruitmentReportComponent, canActivate: [permissionGuard(PERMISSIONS.reports.view)]},
+            { path: 'alerts', component: AlertsComponent, canActivate: [permissionGuard(PERMISSIONS.alerts.view)]},
+            { path: 'audit', component: AuditLogComponent, canActivate: [permissionGuard(PERMISSIONS.audit.view)]},
         ]
     },
     {

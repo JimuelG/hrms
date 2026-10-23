@@ -4,8 +4,10 @@ using Core.Constant;
 using Core.DTOs.Employees;
 using Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
+
 public class IdentifiersController(IIdentifierService service) : BaseApiController
 {
     private bool TryGetUserId(out Guid userId) => Guid.TryParse(User.FindFirst("sub")?.Value, out userId);
@@ -28,6 +30,7 @@ public class IdentifiersController(IIdentifierService service) : BaseApiControll
         return (await service.SetAsync(userId, employeeId, dto, ct)).ToActionResult(this);
     }
 
+    [EnableRateLimiting("sensitive")]
     [HasPermission(Permissions.Identifiers.Reveal)]
     [HttpPost("employee/{employeeId:guid}/reveal")]
     public async Task<IActionResult> Reveal(Guid employeeId, RevealDto dto, CancellationToken ct)
@@ -37,6 +40,7 @@ public class IdentifiersController(IIdentifierService service) : BaseApiControll
         return (await service.RevealAsync(userId, employeeId, dto.Field, ct)).ToActionResult(this);
     }
 
+    [EnableRateLimiting("sensitive")]
     [HasPermission(Permissions.Identifiers.Reveal)]
     [HttpGet("employee/{employeeId:guid}/access-log")]
     public async Task<IActionResult> AccessLog(Guid employeeId, CancellationToken ct)

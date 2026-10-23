@@ -1,11 +1,13 @@
 using Application.Features.Platform;
 using Application.Features.Settings;
 using Core.Interfaces;
+using Infrastructure.Audit;
 using Infrastructure.Authorization;
 using Infrastructure.Common;
 using Infrastructure.Features;
 using Infrastructure.Features.Platform;
 using Infrastructure.Identity;
+using Infrastructure.Jobs;
 using Infrastructure.Persistence;
 using Infrastructure.Security;
 using Infrastructure.Storage;
@@ -48,6 +50,8 @@ public static class DependencyInjecttion
         services.AddScoped<ITenantNameProvider, TenantNameProvider>();
 
         services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
+        services.AddSingleton<ITenantJobRunner, TenantJobRunner>();
+        services.AddScoped<IAuditLogQuery, AuditLogQuery>();
         
         services.AddOptions<JwtOptions>()
             .Bind(config.GetSection(JwtOptions.Section))

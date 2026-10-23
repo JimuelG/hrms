@@ -15,4 +15,6 @@ export const PERMISSIONS = {
     compensation: { read: 'compensation.read', write: 'compensation.write' },
     identifiers: { read: 'identifiers.read', write: 'identifiers.write', reveal: 'identifiers.write' },
     reports: { view: 'reports.view' },
+    alerts: { view: 'alerts.view', manage: 'alerts.manage' },
+    audit: { view: 'audit.view' },
 } as const;

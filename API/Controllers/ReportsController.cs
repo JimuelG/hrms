@@ -6,12 +6,14 @@ using Core.Constant;
 using Core.DTOs.Reports;
 using Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
 public class ReportsController(
     IWorkforceReportService workforce,
     IAttendanceReportService attendance,
-    ILeaveReportService leave) : BaseApiController
+    ILeaveReportService leave,
+    IRecruitmentReportService recruitment) : BaseApiController
 {
     private IActionResult Csv(ServiceResult<CsvFile> result)
     {
@@ -32,6 +34,7 @@ public class ReportsController(
         return (await workforce.GetAsync(ct)).ToActionResult(this);
     }
 
+    [EnableRateLimiting("sensitive")]
     [HasPermission(Permissions.Reports.View)]
     [HttpGet("workforce/export")]
     public async Task<IActionResult> ExportWorkforce([FromQuery] string breakdown, CancellationToken ct) =>
@@ -45,6 +48,7 @@ public class ReportsController(
         return (await attendance.GetAsync(query, ct)).ToActionResult(this);
     }
 
+    [EnableRateLimiting("sensitive")]
     [HasPermission(Permissions.Reports.View)]
     [HttpGet("attendance/export")]
     public async Task<IActionResult> ExportAttendance([FromQuery] AttendanceReportQuery query, CancellationToken ct) =>
@@ -58,6 +62,7 @@ public class ReportsController(
         return (await leave.UsageAsync(year, departmentId, branchId, ct)).ToActionResult(this);
     }
 
+    [EnableRateLimiting("sensitive")]
     [HasPermission(Permissions.Reports.View)]
     [HttpGet("leave-usage/export")]
     public async Task<IActionResult> ExportLeaveUsage([FromQuery] int year, [FromQuery] Guid? departmentId, [FromQuery] Guid? branchId, CancellationToken ct) =>
@@ -71,9 +76,24 @@ public class ReportsController(
         return (await leave.CalendarAsync(from, to, departmentId, branchId, ct)).ToActionResult(this);
     }
 
+    [EnableRateLimiting("sensitive")]
     [HasPermission(Permissions.Reports.View)]
     [HttpGet("leave-calendar/export")]
     public async Task<IActionResult> ExportLeaveCalendar([FromQuery] DateOnly from, [FromQuery] DateOnly to, [FromQuery] Guid? departmentId, [FromQuery] Guid? branchId, CancellationToken ct) =>
         Csv(await leave.ExportCalendarAsync(from, to, departmentId, branchId, ct));
+
+    [HasPermission(Permissions.Reports.View)]
+    [HttpGet("recruitment")]
+    public async Task<IActionResult> Recruitment([FromQuery] RecruitmentReportQuery query, CancellationToken ct)
+    {
+        NoStore();
+        return (await recruitment.GetAsync(query, ct)).ToActionResult(this);
+    }
+
+    [EnableRateLimiting("sensitive")]
+    [HasPermission(Permissions.Reports.View)]
+    [HttpGet("recruitment/export")]
+    public async Task<IActionResult> ExportRecruitment([FromQuery] RecruitmentReportQuery query, CancellationToken ct) =>
+        Csv(await recruitment.ExportAsync(query, ct));
 
 }

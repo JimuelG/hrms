@@ -42,6 +42,14 @@
           </a>
         </div>
       }
+
+      @if (d.openAlerts !== null) {
+        <a routerLink="/alerts" class="block bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4 hover:border-indigo-300 dark:hover:border-indigo-700">
+          <div class="text-xs text-slate-500 dark:text-slate-400">Alerts</div>
+          <div class="text-3xl font-semibold tabular-nums mt-1" [class.text-amber-600]="d.openAlerts > 0" [class.dark:text-amber-400]="d.openAlerts > 0">{{ d.openAlerts }}</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-2">{{ d.openAlerts === 0 ? 'All clear' : 'Need attention' }}</div>
+        </a>
+      }
     </div>
 
     @if (d.attendance; as a) {

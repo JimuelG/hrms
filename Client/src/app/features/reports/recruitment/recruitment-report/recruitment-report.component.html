@@ -1,0 +1,92 @@
+<div class="max-w-5xl">
+  <div class="mb-6">
+    <h1 class="text-xl font-semibold tracking-tight">Recruitment report</h1>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Applications received in the period, and how far they got. Counts only: no names or salaries.</p>
+  </div>
+
+  <div class="flex flex-wrap items-end gap-3 mb-4">
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">From</span>
+      <input type="date" [(ngModel)]="q.from" name="from" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">To</span>
+      <input type="date" [(ngModel)]="q.to" name="to" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none" /></label>
+    <label class="block"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Department</span>
+      <select [(ngModel)]="q.departmentId" name="dept" class="border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm outline-none min-w-[160px]">
+        <option value="">All</option>@for (d of departments(); track d.id) { <option [value]="d.id">{{ d.name }}</option> }
+      </select></label>
+    <button (click)="run()" [disabled]="loading()" class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">{{ loading() ? 'Loading…' : 'Run report' }}</button>
+    <button (click)="download()" class="px-3.5 py-2 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800"><i class="fa-solid fa-download text-xs"></i> CSV</button>
+  </div>
+
+  @if (error()) { <div class="text-red-600 dark:text-red-400 text-sm mb-4">{{ error() }}</div> }
+
+  @if (report(); as r) {
+    <div class="grid sm:grid-cols-3 gap-3 mb-5">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+        <div class="text-xs text-slate-500 dark:text-slate-400">Applications received</div>
+        <div class="text-3xl font-semibold tabular-nums mt-1">{{ r.totalApplications }}</div>
+      </div>
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+        <div class="text-xs text-slate-500 dark:text-slate-400">Time to hire (days)</div>
+        @if (r.timeToHire.count > 0) {
+          <div class="text-3xl font-semibold tabular-nums mt-1">{{ r.timeToHire.medianDays }}<span class="text-sm font-normal text-slate-400"> median</span></div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">average {{ r.timeToHire.averageDays }} across {{ r.timeToHire.count }} hire(s)</div>
+        } @else { <div class="text-sm text-slate-400 mt-2">No accepted offers in this period.</div> }
+      </div>
+      <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+        <div class="text-xs text-slate-500 dark:text-slate-400">Offer acceptance</div>
+        @if (r.offerAcceptance.percent !== null) {
+          <div class="text-3xl font-semibold tabular-nums mt-1">{{ r.offerAcceptance.percent }}%</div>
+          <div class="text-xs text-slate-500 dark:text-slate-400 mt-1">{{ r.offerAcceptance.accepted }} accepted, {{ r.offerAcceptance.declined }} declined
+            @if (r.offerAcceptance.smallSample) { <span class="text-amber-700 dark:text-amber-400"> · small sample</span> }</div>
+        } @else { <div class="text-sm text-slate-400 mt-2">No answered offers yet.</div> }
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-4 mb-4">
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+        <h2 class="text-sm font-semibold mb-3">Where applications are now</h2>
+        @for (s of r.pipeline; track s.stage) {
+          <div class="mb-2">
+            <div class="flex justify-between text-sm"><span>{{ s.stage }}</span><span class="tabular-nums text-slate-500 dark:text-slate-400">{{ s.count }}</span></div>
+            <div class="h-1.5 rounded bg-slate-100 dark:bg-slate-800 mt-1"><div class="h-1.5 rounded bg-indigo-500" [style.width.%]="width(s.count, max(r.pipeline))"></div></div>
+          </div>
+        }
+      </section>
+
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+        <h2 class="text-sm font-semibold mb-3">How far applications got</h2>
+        <table class="w-full text-sm">
+          <thead><tr class="text-xs text-slate-500 dark:text-slate-400"><th class="text-left font-medium pb-1">Stage</th><th class="text-right font-medium pb-1">Reached</th><th class="text-right font-medium pb-1">Of applied</th><th class="text-right font-medium pb-1">Of previous</th></tr></thead>
+          <tbody class="tabular-nums">
+            @for (c of r.conversion; track c.stage) {
+              <tr><td class="py-0.5">{{ c.stage }}</td><td class="py-0.5 text-right">{{ c.reached }}</td>
+                <td class="py-0.5 text-right">{{ c.percentOfApplied === null ? '—' : c.percentOfApplied + '%' }}</td>
+                <td class="py-0.5 text-right">{{ c.percentOfPrevious === null ? '—' : c.percentOfPrevious + '%' }}@if (c.smallSample && c.percentOfPrevious !== null) { <span class="text-amber-700 dark:text-amber-400">*</span> }</td></tr>
+            }
+          </tbody>
+        </table>
+        <p class="text-xs text-slate-400 mt-2">* based on fewer than 5 applications. Side statuses such as rejected or withdrawn are counted only as far as an interview or offer on record shows.</p>
+      </section>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-4">
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+        <h2 class="text-sm font-semibold mb-3">Offers by status</h2>
+        @for (o of r.offers; track o.label) { <div class="flex justify-between text-sm py-0.5"><span>{{ o.label }}</span><span class="tabular-nums text-slate-500 dark:text-slate-400">{{ o.count }}</span></div> }
+        @empty { <p class="text-sm text-slate-400">No offers.</p> }
+      </section>
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+        <h2 class="text-sm font-semibold mb-3">Interviews by status</h2>
+        @for (i of r.interviews; track i.label) { <div class="flex justify-between text-sm py-0.5"><span>{{ i.label }}</span><span class="tabular-nums text-slate-500 dark:text-slate-400">{{ i.count }}</span></div> }
+        @empty { <p class="text-sm text-slate-400">No interviews.</p> }
+      </section>
+      <section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+        <h2 class="text-sm font-semibold mb-3">Applications by posting</h2>
+        @for (p of r.postings; track p.label) { <div class="flex justify-between text-sm py-0.5"><span class="truncate pr-2">{{ p.label }}</span><span class="tabular-nums text-slate-500 dark:text-slate-400">{{ p.count }}</span></div> }
+        @empty { <p class="text-sm text-slate-400">None.</p> }
+      </section>
+    </div>
+  } @else if (!error()) {
+    <p class="text-sm text-slate-400">Loading…</p>
+  }
+</div>

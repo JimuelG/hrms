@@ -24,4 +24,5 @@ public sealed record DashboardDto(
     AttendanceCard? Attendance,
     LeaveCard Leave,
     int? OpenJobPostings,
-    MeCard? Me);
+    MeCard? Me,
+    int? OpenAlerts);

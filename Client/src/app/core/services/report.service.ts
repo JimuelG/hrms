@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { environment } from '../../../environments/environment.development';
 import { Observable } from 'rxjs';
-import { AttendanceQuery, AttendanceReport, Breakdown, LeaveCalendar, LeaveUsageReport, WorkforceReport } from '../../shared/models/reports';
+import { AttendanceQuery, AttendanceReport, Breakdown, LeaveCalendar, LeaveUsageReport, RecruitmentQuery, RecruitmentReport, WorkforceReport } from '../../shared/models/reports';
 
 @Injectable({
   providedIn: 'root',
@@ -47,5 +47,13 @@ export class ReportService {
 
   exportLeaveCalendar(from: string, to: string, departmentId: string, branchId: string): Observable<Blob> {
     return this.http.get(`${this.baseUrl}/leave-calendar/export`, { params: this.params({ from, to, departmentId, branchId }), responseType: 'blob' });
+  }
+
+  recruitment(q: RecruitmentQuery): Observable<RecruitmentReport> {
+    return this.http.get<RecruitmentReport>(`${this.baseUrl}/recruitment`, { params: this.params({ ...q }) });
+  }
+
+  exportRecruitment(q: RecruitmentQuery): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/recruitment/export`, { params: this.params({ ...q }), responseType: 'blob' });
   }
 }

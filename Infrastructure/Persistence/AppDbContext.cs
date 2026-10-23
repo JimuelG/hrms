@@ -73,6 +73,7 @@ public class AppDbContext : IdentityUserContext<ApplicationUser, Guid>
     public DbSet<PayrollLoanApplication> PayrollLoanApplications => Set<PayrollLoanApplication>();
     public DbSet<EmployeeIdentifiers> EmployeeIdentifiers => Set<EmployeeIdentifiers>();
     public DbSet<IdentifierAccessLog> IdentifierAccessLogs => Set<IdentifierAccessLog>();
+    public DbSet<Alert> Alerts => Set<Alert>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

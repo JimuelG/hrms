@@ -12,6 +12,13 @@ public class ApiFactory : WebApplicationFactory<Program>, IAsyncLifetime
 {
     private readonly MsSqlContainer _sql = new MsSqlBuilder().Build();
 
+    public ApiFactory()
+    {
+        Environment.SetEnvironmentVariable("Jobs__Enabled", "false");
+        Environment.SetEnvironmentVariable("RateLimits__AuthPerMinute", "1000");
+        Environment.SetEnvironmentVariable("RateLimits__SensitivePerMinute", "1000");
+    }
+
     public async Task InitializeAsync()
     {
         await _sql.StartAsync();

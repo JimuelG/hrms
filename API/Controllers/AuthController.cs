@@ -3,9 +3,10 @@ using Core.Interfaces;
 using Infrastructure.Identity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace API.Controllers;
+
 
 public class AuthController(
     IAuthService auth,
@@ -14,6 +15,7 @@ public class AuthController(
     private const string RefreshCookie = "hrms_refresh";
     private string? Ip => HttpContext.Connection.RemoteIpAddress?.ToString();
 
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginRequest request, CancellationToken ct)
@@ -36,6 +38,7 @@ public class AuthController(
         }
     }
 
+    [EnableRateLimiting("auth")]
     [AllowAnonymous]
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh(CancellationToken ct)
