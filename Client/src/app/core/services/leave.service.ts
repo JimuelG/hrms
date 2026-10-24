@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { environment } from '../../../environments/environment.development';
+import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { CreateLeaveRequestValve, DayPortion, LeaveAttachment, LeaveBalance, LeaveBalances, LeaveFilingResult, LeavePreview, LeaveRequest, LeaveType, LedgerEntry } from '../../shared/models/leave';
 import { ApprovalStatus, PagedResult } from '../../shared/models/attendance';

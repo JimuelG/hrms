@@ -1,4 +1,5 @@
 using System.Reflection;
+using Core.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
@@ -8,7 +9,8 @@ namespace Tests;
 public class EndpointSecurityTests
 {
     // Reviewed: reachable without signing in (for example sign-in and token refresh).
-    private static readonly HashSet<string> Anonymous = ["Auth.Login", "Auth.Refresh", "Auth.Logout"];
+    private static readonly HashSet<string> Anonymous = ["Auth.Login", "Auth.Refresh", "Auth.Logout", "Auth.ChangeTemporaryPassword"];
+    
 
     // Reviewed: open to any signed-in user, because the service decides what each person sees.
     private static readonly HashSet<string> SignedInOnly = 
@@ -21,7 +23,7 @@ public class EndpointSecurityTests
         "Approvals.Inbox",
         "Approvals.Mine",
         "Approvals.Approve",
-        "Approval.Reject",
+        "Approvals.Reject",
         "Approvals.Comment"
     ];
 
@@ -74,5 +76,12 @@ public class EndpointSecurityTests
     {
         var keys = Actions().Select(a => a.Key).ToHashSet();
         Assert.Empty(Anonymous.Concat(SignedInOnly).Where(k => !keys.Contains(k)));
+    }
+
+    [Fact]
+    public void Every_Hidden_Entity_Name_Is_A_Real_Entity()
+    {
+        var names = typeof(Core.Entities.Employee).Assembly.GetTypes().Select(t => t.Name).ToHashSet();
+        Assert.Empty(AuditRules.HiddenEntities.Where(n => !names.Contains(n)));
     }
 }

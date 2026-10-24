@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { environment } from '../../../environments/environment.development';
+import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { AttendanceQuery, AttendanceReport, Breakdown, LeaveCalendar, LeaveUsageReport, RecruitmentQuery, RecruitmentReport, WorkforceReport } from '../../shared/models/reports';
 

@@ -13,6 +13,7 @@ export interface LoginResponse {
     accessToken: string | null;
     accessTokenExpiresAtUtc: string | null;
     tenantSelectionRequired: boolean;
+    passwordChangeRequired?: boolean;
     tenants: TenantChoice[] | null;
 }
 

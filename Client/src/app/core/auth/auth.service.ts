@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable, signal } from '@angular/core';
-import { environment } from '../../../environments/environment.development';
+import { environment } from '../../../environments/environment';
 import { LoginRequest, LoginResponse, MeResponse } from '../../shared/models/auth';
 import { catchError, map, Observable, of, tap } from 'rxjs';
 
@@ -93,5 +93,10 @@ export class AuthService {
     } catch {
       return { tenantId: null, isPlatformAdmin: false };
     }
+  }
+
+  changeTemporaryPassword(body: { email: string; currentPassword: string; newPassword: string; tenantSlug?: string | null }): Observable<LoginResponse> {
+    return this.http.post<LoginResponse>(`${this.baseUrl}/auth/change-temporary-password`, body, { withCredentials: true })
+      .pipe(tap((res) => { if (res.accessToken) this.setSession(res.accessToken, res.accessTokenExpiresAtUtc); }));
   }
 }

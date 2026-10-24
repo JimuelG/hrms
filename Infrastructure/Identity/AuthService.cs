@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Core.Common;
 using Core.DTOs.Auth;
 using Core.Entities;
 using Core.Interfaces;
@@ -8,6 +9,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.Identity.Client.NativeInterop;
 
 namespace Infrastructure.Identity;
 
@@ -28,39 +30,12 @@ public sealed class AuthService(
         if (check.IsLockedOut) return new(LoginStatus.LockedOut);
         if (!check.Succeeded) return new(LoginStatus.InvalidCredentials);
 
-        var slug = request.TenantSlug?.Trim().ToLowerInvariant();
+        if (user.MustChangePassword)
+            return AccountRules.TemporaryPasswordExpired(user.TemporaryPasswordExpiresAtUtc, DateTime.UtcNow)
+                ? new(LoginStatus.TemporaryPasswordExpired)
+                : new(LoginStatus.PasswordChangeRequired);
 
-        if (user.IsPlatformAdmin && string.IsNullOrEmpty(slug))
-        {
-            var (platformTokens, _) = Issue(user, null, Guid.NewGuid(), ipAddress);
-            await db.SaveChangesAsync(ct);
-            return new(LoginStatus.Succeeded, platformTokens);
-        }
-
-        var memberships = await db.UserTenants
-            .Where(ut => ut.UserId == user.Id && ut.IsActive && ut.Tenant.Status == TenantStatus.Active)
-            .Select(ut => new MemberShip(ut.TenantId, ut.Tenant.Slug, ut.Tenant.Name))
-            .ToListAsync(ct);
-
-        if (memberships.Count == 0) return new(LoginStatus.InvalidCredentials);
-
-        MemberShip? chosen;
-        if (string.IsNullOrEmpty(slug))
-        {
-            if (memberships.Count > 1)
-                return new(LoginStatus.TenantSelectionRequired,
-                    Tenants: memberships.Select(m => new TenantChoice(m.Slug, m.Name)).ToList());
-            chosen = memberships[0];
-        }
-        else
-        {
-            chosen = memberships.FirstOrDefault(m => m.Slug == slug);
-            if (chosen is null) return new(LoginStatus.InvalidCredentials);   // don't reveal which tenants exist
-        }
-
-        var (tokens, _) = Issue(user, chosen.TenantId, Guid.NewGuid(), ipAddress);
-        await db.SaveChangesAsync(ct);
-        return new(LoginStatus.Succeeded, tokens);
+        return await CompleteLoginAsync(user, request.TenantSlug, ipAddress, ct);
     }
 
     public async Task LogoutAsync(string refreshToken, CancellationToken ct)
@@ -77,7 +52,6 @@ public sealed class AuthService(
 
         if (stored.IsRevoked)
         {
-            // An already-used token came back: assume theft, kill the whole session family.
             await RevokeFamilyAsync(stored.FamilyId, ct);
             return null;
         }
@@ -85,8 +59,8 @@ public sealed class AuthService(
 
         var user = await userManager.FindByIdAsync(stored.UserId.ToString());
         if (user is null || await userManager.IsLockedOutAsync(user)) return null;
+        if (user.MustChangePassword) return null;
 
-        // Re-validate access: membership and tenant status may have changed since login.
         if (stored.TenantId is Guid tenantId)
         {
             var stillMember = await db.UserTenants.AnyAsync(ut =>
@@ -106,8 +80,33 @@ public sealed class AuthService(
         var (tokens, newHash) = Issue(user, stored.TenantId, stored.FamilyId, ipAddress);
         stored.RevokedAtUtc = DateTime.UtcNow;
         stored.ReplacedByTokenHash = newHash;
-        await db.SaveChangesAsync(ct);   // revoke old + insert new atomically
+        await db.SaveChangesAsync(ct);
         return tokens;
+    }
+
+    public async Task<LoginResult> ChangeTemporaryPasswordAsync(ChangeTemporaryPasswordRequest request, string? ipAddress, CancellationToken ct)
+    {
+        var user = await userManager.FindByEmailAsync(request.Email);
+        if (user is null) return new(LoginStatus.InvalidCredentials);
+
+        var check = await signInManager.CheckPasswordSignInAsync(user, request.CurrentPassword, lockoutOnFailure: true);
+        if (check.IsLockedOut) return new(LoginStatus.LockedOut);
+        if (!check.Succeeded || !user.MustChangePassword) return new(LoginStatus.InvalidCredentials);
+        if (AccountRules.TemporaryPasswordExpired(user.TemporaryPasswordExpiresAtUtc, DateTime.UtcNow))
+            return new(LoginStatus.TemporaryPasswordExpired);
+
+        if (request.NewPassword == request.CurrentPassword)
+            return new(LoginStatus.PasswordRejected, Errors: ["Choose a password different from the temporary one."]);
+
+        var changed = await userManager.ChangePasswordAsync(user, request.CurrentPassword, request.NewPassword);
+        if (!changed.Succeeded)
+            return new(LoginStatus.PasswordRejected, Errors: changed.Errors.Select(e => e.Description).ToList());
+
+        user.MustChangePassword = false;
+        user.TemporaryPasswordExpiresAtUtc = null;
+        await userManager.UpdateAsync(user);
+
+        return await CompleteLoginAsync(user, request.TenantSlug, ipAddress, ct);
     }
 
     private (AuthTokens Tokens, string RefreshHash) Issue(
@@ -136,5 +135,42 @@ public sealed class AuthService(
 
     private static string Hash(string token) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(token)));
+
+    private async Task<LoginResult> CompleteLoginAsync(ApplicationUser user, string? tenantSlug, string? ipAddress, CancellationToken ct)
+    {
+        var slug = tenantSlug?.Trim().ToLowerInvariant();
+
+        if (user.IsPlatformAdmin && string.IsNullOrEmpty(slug))
+        {
+            var (platformTokens, _) = Issue(user, null, Guid.NewGuid(), ipAddress);
+            await db.SaveChangesAsync(ct);
+            return new(LoginStatus.Succeeded, platformTokens);
+        }
+
+        var memberships = await db.UserTenants
+            .Where(ut => ut.UserId == user.Id && ut.IsActive && ut.Tenant.Status == TenantStatus.Active)
+            .Select(ut => new MemberShip(ut.TenantId, ut.Tenant.Slug, ut.Tenant.Name))
+            .ToListAsync();
+
+        if (memberships.Count == 0) return new(LoginStatus.InvalidCredentials);
+
+        MemberShip? chosen;
+        if (string.IsNullOrEmpty(slug))
+        {
+            if (memberships.Count > 1)
+                return new(LoginStatus.TenantSelectionRequired,
+                    Tenants: memberships.Select(m => new TenantChoice(m.Slug, m.Name)).ToList());
+            chosen = memberships[0];
+        }
+        else
+        {
+            chosen = memberships.FirstOrDefault(m => m.Slug == slug);
+            if (chosen is null) return new(LoginStatus.InvalidCredentials);
+        }
+
+        var (tokens, _) = Issue(user, chosen.TenantId, Guid.NewGuid(), ipAddress);
+        await db.SaveChangesAsync(ct);
+        return new(LoginStatus.Succeeded, tokens);
+    }
 
 }

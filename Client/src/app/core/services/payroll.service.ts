@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { environment } from '../../../environments/environment.development';
+import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { AdjustmentTax, Compensation, PayrollAdjustment, PayrollRunDetail, PayrollRunSummary, PayrollSettings, Payslip, PayslipSummary, RecurringItem, RecurringItemForm, RuleSet, RuleSetForm, StatutoryKind, StatutoryPreview } from '../../shared/models/payroll';
 

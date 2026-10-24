@@ -1,0 +1,20 @@
+{$APP_DOMAIN} {
+encode zstd gzip
+root * /srv/app
+try_files {path} /index.html
+file_server
+header {
+X-Content-Type-Options nosniff
+X-Frame-Options DENY
+Referrer-Policy no-referrer
+Strict-Transport-Security "max-age=31536000"
+Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://{$API_DOMAIN}; frame-ancestors 'none'"
+}
+}
+
+{$API_DOMAIN} {
+encode zstd gzip
+@private path /health /health/* /hangfire /hangfire/*
+respond @private 404
+reverse_proxy api:8080
+}

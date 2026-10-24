@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { environment } from '../../../environments/environment.development';
+import { environment } from '../../../environments/environment';
 import { Observable } from 'rxjs';
 import { WorkSchedule, WorkScheduleFormValue } from '../../shared/models/attendance';
 import { HttpClient } from '@angular/common/http';

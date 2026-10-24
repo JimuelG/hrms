@@ -17,4 +17,5 @@ export const PERMISSIONS = {
     reports: { view: 'reports.view' },
     alerts: { view: 'alerts.view', manage: 'alerts.manage' },
     audit: { view: 'audit.view' },
+    users: { manage: 'users.manage'}
 } as const;

@@ -1,0 +1,75 @@
+name: hrms
+
+x-db-connection: &db "Server=db;Database=hrms;User Id=sa;Password=${SQL_SA_PASSWORD};TrustServerCertificate=True;Encrypt=True"
+
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD}
+    volumes:
+      - sqldata:/var/opt/mssql
+      - ./backups:/var/opt/mssql/backups
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  migrate:
+    build: { context: ., target: migrator }
+    environment:
+      ConnectionStrings__Default: *db
+      Jwt__SigningKey: ${JWT_SIGNING_KEY}
+    command: ["--connection", *db]
+    networks: [backend]
+    depends_on:
+      db: { condition: service_healthy }
+    restart: "no"
+  
+  api:
+    build: { context: ., target: runtime }
+    restart: unless-stopped
+    environment:
+      ConnectionStrings__Default: *db
+      Jwt__SigningKey: ${JWT_SIGNING_KEY}
+      Cors__AllowedOrigins__0: https://${APP_DOMAIN}
+      ForwardedHeaders__KnownProxies__0: 172.30.0.10
+      AllowedHosts: "${API_DOMAIN};api"
+      RateLimits__AuthPerMinute: "30"
+    volumes:
+      - appdata:/data
+    networks:
+      backend: { ipv4_address: 172.30.0.20 }
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+
+  proxy:
+    image: caddy:2
+    restart: unless-stopped
+    ports: ["80:80", "443:443"]
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN}
+      API_DOMAIN: ${API_DOMAIN}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./client-dist:/srv/app:ro
+      - caddydata:/data
+    networks:
+      backend: { ipv4_address: 172.30.0.10 }
+    depends_on: [api]
+
+networks:
+  backend:
+    ipam:
+      config: [{ subnet: 172.30.0.0/24 }]
+
+volumes:
+  sqldata: {}
+  appdata: {}
+  caddydata: {}

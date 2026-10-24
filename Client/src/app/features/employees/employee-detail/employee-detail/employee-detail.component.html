@@ -121,6 +121,12 @@
         @if (permissions.can(P.identifiers.read)) {
           <app-employee-identifiers [employeeId]="employeeId" />
         }
+
+        @if (permissions.can(P.users.manage)) {
+          @if (employee(); as e) {
+            <app-employee-login [employeeId]="employeeId" [defaultEmail]="e.email" />
+          }
+        }
       </div>
     }
 

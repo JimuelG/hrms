@@ -145,6 +145,11 @@ public static class Permissions
         public const string View = "audit.view";
     }
 
+    public static class Users
+    {
+        public const string Manage = "users.manage";
+    }
+
     public static IEnumerable<(string Code, string Module, string Description)> All() =>
     [
         (Employees.Read, "Employees", "View employee records"),
@@ -205,6 +210,7 @@ public static class Permissions
         (Alerts.View, "Alerts", "View system alerts such as expiring documents"),
         (Alerts.Manage, "Alerts", "Run an alert scan on demand"),
         (Audit.View, "Admin", "View the audit trail of changes (contains personal data)"),
+        (Users.Manage, "Admin", "Create logins for employees and reset their passwords"),
 
     ];
 }

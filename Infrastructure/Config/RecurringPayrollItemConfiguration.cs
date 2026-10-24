@@ -11,7 +11,7 @@ public class RecurringPayrollItemConfiguration : IEntityTypeConfiguration<Recurr
         builder.Property(i => i.Label).HasMaxLength(100).IsRequired();
         builder.Property(i => i.Amount).HasColumnType("decimal(18,2)");
         builder.Property(i => i.TotalOwed).HasColumnType("decimal(18,2)");
-        builder.Property(i => i.TotalOwed).HasColumnType("decimal(18,2)");
+        builder.Property(i => i.PaidSoFar).HasColumnType("decimal(18,2)");
         builder.Property(i => i.Tax).HasConversion<int>();
         builder.Property(i => i.RowVersion).IsRowVersion();
 

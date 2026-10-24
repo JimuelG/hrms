@@ -271,7 +271,8 @@ public static class DevDataSeeder
            Permissions.Reports.View,
            Permissions.Alerts.View,
            Permissions.Alerts.Manage,
-           Permissions.Audit.View
+           Permissions.Audit.View,
+           Permissions.Users.Manage
            
         ], assignTo:acmeAdmin);
 
@@ -330,7 +331,8 @@ public static class DevDataSeeder
             Permissions.Payroll.Finalize,
             Permissions.Alerts.View,
             Permissions.Alerts.Manage,
-            Permissions.Audit.View
+            Permissions.Audit.View,
+            Permissions.Users.Manage
 
         ], assignTo: multiUser);
 

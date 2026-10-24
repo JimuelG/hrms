@@ -18,7 +18,7 @@ public static class AuditRules
         "PayrollResultRecord",
         "PayrollAdjustmentRecord",
         "RecurringPayrollItem",
-        "LoadRepayment",
+        "LoanRepayment",
         "PayrollLoanApplication"
     ];
 

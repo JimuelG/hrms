@@ -15,7 +15,10 @@ public sealed record TenantChoice(string Slug, string Name);
 public enum LoginStatus { 
     Succeeded, 
     InvalidCredentials, 
-    LockedOut, 
+    LockedOut,
+    PasswordChangeRequired,
+    TemporaryPasswordExpired,
+    PasswordRejected,
     TenantSelectionRequired 
 }
 
@@ -24,8 +27,14 @@ public sealed record AuthTokens(
     string RefreshToken, DateTime RefreshTokenExpiresAtUtc);
 
 public sealed record LoginResult(
-    LoginStatus Status, AuthTokens? Tokens = null, IReadOnlyList<TenantChoice>? Tenants = null);
+    LoginStatus Status,
+    AuthTokens? Tokens = null,
+    IReadOnlyList<string>? Errors = null,
+    IReadOnlyList<TenantChoice>? Tenants = null);
 
 public sealed record LoginResponse(
-    string? AccessToken, DateTime? AccessTokenExpiresAtUtc,
-    bool TenantSelectionRequired, IReadOnlyList<TenantChoice>? Tenants);
+    string? AccessToken,
+    DateTime? AccessTokenExpiresAtUtc,
+    bool TenantSelectionRequired, 
+    IReadOnlyList<TenantChoice>? Tenants,
+    bool PasswordChangeRequired = false);

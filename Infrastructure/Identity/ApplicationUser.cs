@@ -6,5 +6,7 @@ public class ApplicationUser : IdentityUser<Guid>
     public string FirstName { get; set; } = default!;
     public string LastName { get; set; } = default!;
     public bool IsPlatformAdmin { get; set; }
+    public bool MustChangePassword { get; set; }
+    public DateTime? TemporaryPasswordExpiresAtUtc { get; set; }
     public ICollection<UserTenant> Tenants { get; set; } = [];
 }

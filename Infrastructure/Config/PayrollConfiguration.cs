@@ -15,6 +15,7 @@ public class PayrollSettingsConfiguration : IEntityTypeConfiguration<PayrollSett
         builder.Property(s => s.OrdinaryOvertimeMultiplier).HasColumnType("decimal(5,3)");
         builder.Property(s => s.RestDayOvertimeMultiplier).HasColumnType("decimal(5,3)");
         builder.Property(s => s.HolidayOvertimeMultiplier).HasColumnType("decimal(5,3)");
+        builder.Property(s => s.ThirteenthMonthExemptCeiling).HasColumnType("decimal(18,2)");
         builder.Property(s => s.PartialMonthContribution).HasConversion<int>();
         builder.Property(s => s.TaxMethod).HasConversion<int>();
 

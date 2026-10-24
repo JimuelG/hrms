@@ -32,6 +32,11 @@ public class AuthController(
             case LoginStatus.LockedOut:
                 return Problem(statusCode: StatusCodes.Status423Locked,
                     title: "Account temparily locked. Try again later.");
+            case LoginStatus.PasswordChangeRequired:
+                return Ok(new LoginResponse(null, null, false, null, PasswordChangeRequired:true));
+            case LoginStatus.TemporaryPasswordExpired:
+                return Problem(statusCode: StatusCodes.Status401Unauthorized,
+                    title: "Your temporary password has expired. Ask HR for a new one.");
             default:
                 return Problem(statusCode: StatusCodes.Status401Unauthorized,
                     title: "Invalid email or password.");
@@ -88,6 +93,32 @@ public class AuthController(
         return Ok(codes.OrderBy(c => c, StringComparer.Ordinal));
     }
 
+    [AllowAnonymous]
+    [EnableRateLimiting("auth")]
+    [HttpPost("change-temporary-password")]
+    public async Task<IActionResult> ChangeTemporaryPassword(ChangeTemporaryPasswordRequest request, CancellationToken ct)
+    {
+        var result = await auth.ChangeTemporaryPasswordAsync(request, Ip, ct);
+        switch (result.Status)
+        {
+            case LoginStatus.Succeeded:
+                SetRefreshCookie(result.Tokens!);
+                return Ok(ToResponse(result.Tokens!));
+            case LoginStatus.TenantSelectionRequired:
+                return Ok(new LoginResponse(null, null, true, result.Tenants));
+            case LoginStatus.PasswordRejected:
+                return Problem(statusCode: StatusCodes.Status400BadRequest,
+                    title: string.Join(" ", result.Errors ?? []));
+            case LoginStatus.TemporaryPasswordExpired:
+                return Problem(statusCode: StatusCodes.Status401Unauthorized,
+                    title: "Your temporary password has expired. Ask HR for a new one.");
+            case LoginStatus.LockedOut:
+                return Problem(statusCode: StatusCodes.Status423Locked, title: "Account temporarily locked. Try again later.");
+            default:
+                return Problem(statusCode: StatusCodes.Status401Unauthorized, title: "Invalid email or password.");
+        }
+    }
+
     private static LoginResponse ToResponse(AuthTokens t) =>
         new(t.AccessToken, t.AccessTokenExpiresAtUtc, false, null);
 
@@ -102,5 +133,11 @@ public class AuthController(
         });
 
     private void ClearRefreshCookie() =>
-        Response.Cookies.Delete(RefreshCookie, new CookieOptions { Path = "/api/v1/auth"});
+        Response.Cookies.Delete(RefreshCookie, new CookieOptions 
+        { 
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Strict,
+            Path = "/api/v1/auth"
+        });
 }

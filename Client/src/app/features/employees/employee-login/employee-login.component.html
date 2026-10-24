@@ -1,0 +1,47 @@
+<section class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-4">
+  <h2 class="text-sm font-semibold mb-3">Login account</h2>
+  @if (error()) { <div class="text-red-600 dark:text-red-400 text-sm mb-3">{{ error() }}</div> }
+
+  @if (issued(); as i) {
+    <div class="bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-900 rounded-md p-3 mb-3 text-sm">
+      @if (i.temporaryPassword) {
+        <div class="font-medium mb-1">Temporary password for {{ i.email }}</div>
+        <div class="flex items-center gap-2">
+          <code class="font-mono text-base bg-white dark:bg-slate-900 px-2 py-1 rounded select-all">{{ i.temporaryPassword }}</code>
+          <button (click)="copy(i.temporaryPassword)" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">{{ copied() ? 'Copied' : 'Copy' }}</button>
+        </div>
+        <p class="text-xs text-amber-800 dark:text-amber-300 mt-2">
+          This is shown <strong>once</strong>. Give it to the employee in person. They must choose their own password at first sign-in.
+          It expires {{ i.expiresAtUtc | date:'MMM d, h:mm a' }}.
+        </p>
+      } @else {
+        <div>{{ i.email }} already had a login, so it was added to this company. They keep their own password.</div>
+      }
+      <button (click)="dismiss()" class="text-xs font-medium mt-2 underline">Done, hide this</button>
+    </div>
+  }
+
+  @if (account(); as a) {
+    @if (!a.hasLogin) {
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">No login yet. Creating one gives this employee the Employee role in this company.</p>
+      <div class="flex flex-wrap gap-2 items-end">
+        <label class="block flex-1 min-w-[220px]"><span class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Email to sign in with</span>
+          <input type="email" [(ngModel)]="email" name="email" class="w-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 rounded-md px-3 py-2 text-sm" /></label>
+        <button (click)="create()" [disabled]="busy() || !email.trim()" class="px-3.5 py-2 rounded-md text-sm font-medium bg-indigo-600 text-white disabled:opacity-60">Create login</button>
+      </div>
+    } @else {
+      <div class="text-sm">{{ a.email }}</div>
+      <div class="flex flex-wrap gap-2 mt-1 text-[11px]">
+        <span class="px-1.5 py-0.5 rounded" [class]="a.isActive ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'">{{ a.isActive ? 'Can sign in' : 'Access switched off' }}</span>
+        @if (a.mustChangePassword) { <span class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300">Hasn't chosen a password yet</span> }
+      </div>
+      @if (a.isActive) {
+        @if (a.alsoInOtherCompanies) {
+          <p class="text-xs text-slate-400 mt-3">This person also signs in to another company, so their password can't be reset here.</p>
+        } @else {
+          <button (click)="reset()" [disabled]="busy()" class="mt-3 px-3 py-1.5 rounded-md text-sm font-medium border border-slate-200 dark:border-slate-700 disabled:opacity-60">Reset password</button>
+        }
+      }
+    }
+  }
+</section>

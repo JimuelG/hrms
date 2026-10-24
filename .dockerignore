@@ -1,0 +1,14 @@
+﻿**/bin
+**/obj
+**/node_modules
+**/keys
+**/App_Data
+.git
+.vs
+.idea
+Tests
+Client
+backups
+key-backups
+client-dist
+.env

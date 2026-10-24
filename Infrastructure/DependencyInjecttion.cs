@@ -52,6 +52,10 @@ public static class DependencyInjecttion
         services.AddSingleton<ISecretProtector, DataProtectionSecretProtector>();
         services.AddSingleton<ITenantJobRunner, TenantJobRunner>();
         services.AddScoped<IAuditLogQuery, AuditLogQuery>();
+        services.AddScoped<IRetentionService, RetentionService>();
+
+        services.AddScoped<IUserAccountService, UserAccountService>();
+        services.AddScoped<ILeaverAccessSweep, LeaverAccessSweep>();
         
         services.AddOptions<JwtOptions>()
             .Bind(config.GetSection(JwtOptions.Section))

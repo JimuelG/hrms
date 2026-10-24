@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { environment } from '../../../environments/environment.development';
+import { environment } from '../../../environments/environment';
 import { Observable, take } from 'rxjs';
 import { ConvertToEmployeeValue, OnboardingCase } from '../../shared/models/onboarding';
 import { Employee } from '../../shared/models/employee';
